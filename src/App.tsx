@@ -12,6 +12,8 @@ import NoteEditorPage from './features/notes/NoteEditorPage'
 import SearchPage from './features/search/SearchPage'
 import { TrashPage, ArchivePage } from './features/notes/ListsPages'
 import SettingsPage from './features/settings/SettingsPage'
+import AuthPage from './features/auth/AuthPage'
+import { watchAuth } from './features/auth/auth'
 import { openDb, getSettings } from './db'
 import Icon, { type IconName } from './components/ui/Icon'
 import Button from './components/ui/Button'
@@ -124,6 +126,14 @@ function AnimatedRoutes() {
             </Page>
           }
         />
+        <Route
+          path="/login"
+          element={
+            <Page>
+              <AuthPage />
+            </Page>
+          }
+        />
         {MODULE_NAV.map((m) => (
           <Route
             key={m.to}
@@ -146,6 +156,7 @@ function InnerApp() {
 
   // بوت: دیتابیس + تنظیمات
   useEffect(() => {
+    const unwatch = watchAuth()
     void (async () => {
       try {
         await openDb()
@@ -159,6 +170,7 @@ function InnerApp() {
         setBooted(true)
       }
     })()
+    return unwatch
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { useI18n, type Locale } from '../../i18n'
 import { useUi, type Accent, type Theme } from '../../stores/ui'
-import { getSettings, saveSettings, getSyncState } from '../../db'
+import { getSettings, saveSettings } from '../../db'
 import { downloadJson, exportBackup, restoreBackup } from '../../lib/backup'
 import { notesRepo } from '../../db/repos/notes'
 import Icon, { type IconName } from '../../components/ui/Icon'
 import Button from '../../components/ui/Button'
 import { Confirm } from '../../components/ui/Modal'
 import { Switch } from '../../components/ui/Primitives'
+import { useSession } from '../auth/useSession'
+import { signOut, forceSync } from '../auth/auth'
+import { useSyncStatus } from '../../sync/useSyncStatus'
+import { isSupabaseConfigured } from '../../sync/client'
 import { relativeTime } from '../../lib/jalali'
 
 const ACCENTS: { id: Accent; color: string }[] = [
@@ -21,14 +26,15 @@ const ACCENTS: { id: Accent; color: string }[] = [
 
 export function SettingsPage() {
   const { t, locale, setLocale } = useI18n()
+  const navigate = useNavigate()
   const { theme, setTheme, accent, setAccent, toast } = useUi()
-  const [lastSync, setLastSync] = useState(0)
   const [lockEnabled, setLockEnabled] = useState(false)
+  const session = useSession()
+  const { status, lastSyncAt } = useSyncStatus()
   const [confirmClear, setConfirmClear] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    void getSyncState().then((s) => setLastSync(s.lastPullAt || s.lastPushAt))
     void getSettings().then((s) => setLockEnabled(s.lockEnabled))
   }, [])
 
@@ -66,6 +72,88 @@ export function SettingsPage() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <h1 className="text-xl font-extrabold sm:text-2xl">{t('settings.title')}</h1>
+
+      {/* حساب و همگام‌سازی */}
+      <Section icon="cloud" title={t('settings.sync')}>
+        {isSupabaseConfigured() ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <span
+                    className={`h-2 w-2 shrink-0 rounded-full ${
+                      status === 'syncing'
+                        ? 'animate-pulse bg-amber-400'
+                        : status === 'error'
+                          ? 'bg-red-400'
+                          : status === 'offline'
+                            ? 'bg-white/40'
+                            : session
+                              ? 'bg-emerald-400'
+                              : 'bg-white/30'
+                    }`}
+                  />
+                  {session ? session.user.email : t('settings.notLoggedIn')}
+                </div>
+                <div className="mt-0.5 text-[11px] text-white/45">
+                  {status === 'syncing'
+                    ? '…'
+                    : status === 'error'
+                      ? t('error.network')
+                      : lastSyncAt > 0
+                        ? t('settings.lastSync', { t: relativeTime(lastSyncAt, locale) })
+                        : t('settings.sync')}
+                </div>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                {session ? (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="glass"
+                      icon="refresh"
+                      onClick={async () => {
+                        await forceSync()
+                        toast(t('common.saved'), 'success')
+                      }}
+                    >
+                      {t('settings.syncNow')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      icon="logout"
+                      onClick={async () => {
+                        await signOut()
+                        toast(t('auth.signOut'), 'default')
+                      }}
+                    >
+                      {t('auth.signOut')}
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    icon="login"
+                    onClick={() => navigate('/login')}
+                  >
+                    {t('auth.signIn')}
+                  </Button>
+                )}
+              </div>
+            </div>
+            {session && (
+              <p className="rounded-lg bg-white/5 px-3 py-2 text-[11px] leading-5 text-white/45">
+                {t('settings.backupDesc')} — داده‌ها اول محلی ذخیره می‌شوند و سپس به‌صورت خودکار با
+                Supabase همگام می‌شوند.
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-white/50">{t('error.network')}</p>
+        )}
+      </Section>
 
       {/* ظاهر */}
       <Section icon="palette" title={t('settings.appearance')}>
@@ -230,8 +318,8 @@ export function SettingsPage() {
             <div className="text-xs text-white/50">{t('tagline')}</div>
             <div className="mt-1 text-[11px] text-white/35">
               {t('settings.version')} 0.1.0
-              {lastSync > 0 &&
-                ` · ${t('settings.lastSync', { t: relativeTime(lastSync, locale) })}`}
+              {lastSyncAt > 0 &&
+                ` · ${t('settings.lastSync', { t: relativeTime(lastSyncAt, locale) })}`}
             </div>
           </div>
         </div>
