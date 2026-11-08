@@ -189,6 +189,7 @@ function InnerApp() {
 
   // بوت: دیتابیس + تنظیمات
   useEffect(() => {
+    let alive = true
     const unwatch = watchAuth()
     void (async () => {
       try {
@@ -202,10 +203,13 @@ function InnerApp() {
         console.error('boot failed', e)
         toast(t('error.generic'), 'error')
       } finally {
-        setBooted(true)
+        if (alive) setBooted(true)
       }
     })()
-    return unwatch
+    return () => {
+      alive = false
+      unwatch()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

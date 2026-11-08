@@ -50,7 +50,14 @@ export function PomodoroPage() {
   const remainedRef = useRef(DURATION.focus)
 
   useEffect(() => {
-    void pomodoroRepo.todayCount().then(setSessions)
+    let alive = true
+    void pomodoroRepo
+      .todayCount()
+      .then((n) => alive && setSessions(n))
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
   }, [])
 
   // تیکر اصلی
@@ -238,10 +245,14 @@ function RecentSessions() {
   const [recent, setRecent] = useState<Awaited<ReturnType<typeof pomodoroRepo.recent>>>([])
 
   useEffect(() => {
+    let alive = true
     void pomodoroRepo
       .recent(12)
-      .then(setRecent)
-      .catch(() => setRecent([]))
+      .then((r) => alive && setRecent(r))
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
   }, [])
 
   if (recent.length === 0) return null

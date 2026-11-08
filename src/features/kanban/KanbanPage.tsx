@@ -22,7 +22,16 @@ export function KanbanPage() {
   const [dragOver, setDragOver] = useState<string | null>(null)
 
   useEffect(() => {
-    void boardsRepo.ensureDefault().then(() => setReady(true))
+    let alive = true
+    void boardsRepo
+      .ensureDefault()
+      .then(() => {
+        if (alive) setReady(true)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
   }, [])
 
   const boards = useLiveQuery(() => db.boards.toArray(), [ready], [])

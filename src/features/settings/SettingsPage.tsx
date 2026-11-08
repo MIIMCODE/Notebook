@@ -46,11 +46,20 @@ export function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    void getSettings().then((s) => {
-      setLockEnabled(s.lockEnabled)
-      setBioOn(!!s.bioId)
+    let alive = true
+    void getSettings()
+      .then((s) => {
+        if (!alive) return
+        setLockEnabled(s.lockEnabled)
+        setBioOn(!!s.bioId)
+      })
+      .catch(() => {})
+    void biometricsAvailable().then((ok) => {
+      if (alive) setBioAvailable(ok)
     })
-    void biometricsAvailable().then(setBioAvailable)
+    return () => {
+      alive = false
+    }
   }, [])
 
   const doBackup = async () => {

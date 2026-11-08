@@ -50,7 +50,16 @@ export function NoteEditorPage() {
     if (!note || loadedId.current === note.id) return
     loadedId.current = note.id
     setTitle(note.title)
-    void tagsRepo.forNote(note.id).then(setTags)
+    let alive = true
+    void tagsRepo
+      .forNote(note.id)
+      .then((list) => {
+        if (alive) setTags(list)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
   }, [note])
 
   const persist = useCallback(

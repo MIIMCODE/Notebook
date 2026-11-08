@@ -32,16 +32,22 @@ export function LockScreen() {
 
   useEffect(() => {
     if (!locked) return
+    let alive = true
     setPin('')
     setError(false)
     void (async () => {
       const ok = await biometricsAvailable()
+      if (!alive) return
       setBioReady(ok)
       if (ok && (await biometricUnlock())) {
+        if (!alive) return
         markSessionUnlocked()
         unlock()
       }
     })()
+    return () => {
+      alive = false
+    }
   }, [locked, unlock])
 
   const tryBio = async () => {

@@ -39,13 +39,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // همگام‌سازی تنظیمات محلی در اولین بارگذاری
   useEffect(() => {
-    void getSettings().then((s) => {
-      const ui = useUi.getState()
-      ui.setTheme(s.theme)
-      ui.setAccent(s.accent as never)
-      if (s.locale !== locale) setLocale(s.locale as Locale)
-    })
+    let alive = true
+    void getSettings()
+      .then((s) => {
+        if (!alive) return
+        const ui = useUi.getState()
+        ui.setTheme(s.theme)
+        ui.setAccent(s.accent as never)
+        if (s.locale !== locale) setLocale(s.locale as Locale)
+      })
+      .catch(() => {})
     void getSyncState()
+    return () => {
+      alive = false
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
