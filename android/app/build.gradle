@@ -7,8 +7,10 @@ android {
         applicationId "com.yadche.notes"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode (System.getenv("YADCHE_VERSION_CODE") ?: "1").toInteger()
-        versionName System.getenv("YADCHE_VERSION_NAME") ?: "1.0"
+        def verCodeEnv = System.getenv("YADCHE_VERSION_CODE")
+        versionCode(verCodeEnv != null && !verCodeEnv.isEmpty() ? verCodeEnv.toInteger() : 1)
+        def verNameEnv = System.getenv("YADCHE_VERSION_NAME")
+        versionName(verNameEnv != null && !verNameEnv.isEmpty() ? verNameEnv : "1.0")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,11 +18,11 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    signingConfigs {
-        release {
-            def ksPath = System.getenv("YADCHE_KEYSTORE_PATH")
-            if (ksPath != null) {
-                storeFile file(ksPath)
+    def keystorePath = System.getenv("YADCHE_KEYSTORE_PATH")
+    if (keystorePath != null && !keystorePath.isEmpty()) {
+        signingConfigs {
+            release {
+                storeFile file(keystorePath)
                 storePassword System.getenv("YADCHE_KEYSTORE_PASSWORD")
                 keyAlias System.getenv("YADCHE_KEY_ALIAS")
                 keyPassword System.getenv("YADCHE_KEY_PASSWORD")
@@ -31,7 +33,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            if (System.getenv("YADCHE_KEYSTORE_PATH") != null) {
+            if (keystorePath != null && !keystorePath.isEmpty()) {
                 signingConfig signingConfigs.release
             }
         }
