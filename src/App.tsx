@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { BrowserRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, MotionConfig } from 'framer-motion'
 import SplashScreen from './components/SplashScreen'
 import ErrorBoundary from './components/ErrorBoundary'
 import { I18nProvider, useI18n } from './i18n'
@@ -228,11 +228,13 @@ function InnerApp() {
 export function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter>
-        <I18nProvider>
-          <InnerApp />
-        </I18nProvider>
-      </BrowserRouter>
+      <MotionConfig reducedMotion="user">
+        <BrowserRouter>
+          <I18nProvider>
+            <InnerApp />
+          </I18nProvider>
+        </BrowserRouter>
+      </MotionConfig>
     </ErrorBoundary>
   )
 }

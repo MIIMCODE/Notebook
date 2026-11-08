@@ -188,7 +188,7 @@ export interface SyncState {
 
 export interface LocalSettings {
   key: 'settings'
-  theme: 'dark' | 'light'
+  theme: 'dark' | 'light' | 'auto'
   accent: string
   locale: 'fa' | 'en'
   lockEnabled: boolean

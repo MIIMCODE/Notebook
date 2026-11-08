@@ -1,0 +1,89 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+env:
+  YADCHE_KEYSTORE_BASE64: ${{ secrets.YADCHE_KEYSTORE_BASE64 }}
+  YADCHE_KEYSTORE_PASSWORD: ${{ secrets.YADCHE_KEYSTORE_PASSWORD }}
+  YADCHE_KEY_ALIAS: ${{ secrets.YADCHE_KEY_ALIAS }}
+  YADCHE_KEY_PASSWORD: ${{ secrets.YADCHE_KEY_PASSWORD }}
+
+jobs:
+  apk:
+    name: Capacitor + Gradle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Set version
+        id: version
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          echo "name=$VER" >> "$GITHUB_OUTPUT"
+          echo "code=$(( ${{ github.run_number }} + 1000 ))" >> "$GITHUB_OUTPUT"
+
+      - name: Decode keystore (release signing)
+        if: env.YADCHE_KEYSTORE_BASE64 != ''
+        run: echo "$YADCHE_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Gradle — release build (signed)
+        if: env.YADCHE_KEYSTORE_BASE64 != ''
+        env:
+          YADCHE_VERSION_NAME: ${{ steps.version.outputs.name }}
+          YADCHE_VERSION_CODE: ${{ steps.version.outputs.code }}
+          YADCHE_KEYSTORE_PATH: release.keystore
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Gradle — debug build
+        if: env.YADCHE_KEYSTORE_BASE64 == ''
+        env:
+          YADCHE_VERSION_NAME: ${{ steps.version.outputs.name }}
+          YADCHE_VERSION_CODE: ${{ steps.version.outputs.code }}
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Collect APK
+        run: |
+          mkdir -p out-apk
+          VER="${{ steps.version.outputs.name }}"
+          if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
+            cp android/app/build/outputs/apk/release/app-release.apk "out-apk/yadche-v${VER}.apk"
+          else
+            cp android/app/build/outputs/apk/debug/app-debug.apk "out-apk/yadche-v${VER}-debug.apk"
+          fi
+          ls -la out-apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yadche-apk
+          path: out-apk/*.apk
+          if-no-files-found: error
+          retention-days: 30

@@ -115,7 +115,7 @@ npm run dev                 # http://localhost:5173
 ## 🧪 کیفیت
 
 - هر push: `lint + typecheck + test` (ورک‌فلوی `CI`)
-- هر push روی `main`: ساخت APK و آپلود Artifact (ورک‌فلوی `Build Android APK`)
+- با هر push: CI (lint/typecheck/test/build)؛ ساخت APK با تگ `v*` یا Run دستی → Artifact `yadche-apk`
 - Error Boundary سراسری، مدیریت حالت آفلاین/خطای شبکه
 
 ## 📄 لایسنس

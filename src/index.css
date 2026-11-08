@@ -279,3 +279,47 @@ html[data-theme='light'] .yc-prose pre.yc-codeblock {
     transition: none !important;
   }
 }
+
+/* ——— پولیش تم روشن ——— */
+html[data-theme='light'] .yc-btn-primary,
+html[data-theme='light'] .yc-btn-danger {
+  color: #fff !important;
+}
+html[data-theme='light'] .glass-strong {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.78));
+}
+html[data-theme='light'] [class*='animate-pulse'] {
+  background-color: rgba(40, 30, 90, 0.08) !important;
+}
+html[data-theme='light'] ::selection {
+  background: rgba(236, 72, 153, 0.28);
+}
+html[data-theme='light'] {
+  scrollbar-color: rgba(40, 30, 90, 0.28) transparent;
+}
+html[data-theme='light'] .text-gradient {
+  filter: saturate(1.1);
+}
+html[data-theme='light'] .yc-prose {
+  color: #242238;
+}
+html[data-theme='light'] .yc-prose h1,
+html[data-theme='light'] .yc-prose h2,
+html[data-theme='light'] .yc-prose h3 {
+  color: #1b1a2e;
+}
+html[data-theme='light'] .yc-prose pre,
+html[data-theme='light'] .yc-prose blockquote {
+  background: rgba(40, 30, 90, 0.05);
+  color: #242238;
+}
+html[data-theme='light'] .yc-prose code {
+  color: #b0197e;
+}
+html[data-theme='light'] .yc-prose table th,
+html[data-theme='light'] .yc-prose table td {
+  border-color: rgba(40, 30, 90, 0.14);
+}
+html[data-theme='light'] .yc-prose a {
+  color: #7c3aed;
+}

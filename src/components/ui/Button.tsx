@@ -40,7 +40,7 @@ export function Button({
     <motion.button
       whileTap={{ scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-      className={`inline-flex items-center justify-center font-medium transition-colors disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-brand-400 ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`yc-btn yc-btn-${variant} inline-flex items-center justify-center font-medium transition-colors disabled:opacity-40 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-brand-400 ${variants[variant]} ${sizes[size]} ${className}`}
       {...rest}
     >
       {icon && <Icon name={icon} size={size === 'sm' ? 15 : 17} />}

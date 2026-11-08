@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { Locale } from '../i18n/dicts'
 
 export type Accent = 'violet' | 'pink' | 'amber' | 'emerald' | 'sky'
-export type Theme = 'dark' | 'light'
+export type Theme = 'dark' | 'light' | 'auto'
 
 export interface Toast {
   id: string
@@ -37,15 +37,29 @@ const ACCENTS: Record<Accent, { base: string; glow: string }> = {
   sky: { base: '#0EA5E9', glow: 'rgba(14,165,233,0.45)' },
 }
 
+const systemDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches
+let autoListener: (() => void) | null = null
+
 export function applyTheme(theme: Theme, accent: Accent): void {
   const html = document.documentElement
-  html.dataset.theme = theme
+  const resolved = theme === 'auto' ? (systemDark() ? 'dark' : 'light') : theme
+  html.dataset.theme = resolved
   html.dataset.accent = accent
   const a = ACCENTS[accent]
   html.style.setProperty('--accent', a.base)
   html.style.setProperty('--accent-glow', a.glow)
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.setAttribute('content', theme === 'dark' ? '#0B0B14' : '#F6F4FF')
+  if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0B0B14' : '#F6F4FF')
+
+  if (autoListener) {
+    window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', autoListener)
+    autoListener = null
+  }
+  if (theme === 'auto') {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    autoListener = () => applyTheme('auto', accent)
+    mq.addEventListener('change', autoListener)
+  }
 }
 
 let toastCounter = 0

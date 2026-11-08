@@ -197,7 +197,13 @@ export function SearchPage() {
 
       {/* نتایج */}
       {q || hasFilter ? (
-        results.length === 0 ? (
+        notes === undefined ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-32 animate-pulse rounded-2xl bg-white/5" />
+            ))}
+          </div>
+        ) : results.length === 0 ? (
           <EmptyState
             icon="search"
             title={t('search.noResults')}

@@ -179,6 +179,7 @@ export function SettingsPage() {
                 [
                   { id: 'dark', icon: 'moon', label: t('settings.themeDark') },
                   { id: 'light', icon: 'sun', label: t('settings.themeLight') },
+                  { id: 'auto', icon: 'sparkle', label: t('settings.themeAuto') },
                 ] as const
               ).map((x) => (
                 <button

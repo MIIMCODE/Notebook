@@ -69,6 +69,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-dvh">
+      {/* پس‌زمینه‌ی زنده (گرادیان‌های متحرک) */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <motion.div
+          animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
+          transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -top-28 -right-24 h-96 w-96 rounded-full bg-brand-600/15 blur-3xl"
+        />
+        <motion.div
+          animate={{ x: [0, -50, 0], y: [0, 40, 0] }}
+          transition={{ duration: 32, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -bottom-28 -left-20 h-80 w-80 rounded-full bg-rose-accent/12 blur-3xl"
+        />
+      </div>
       {/* نوار آفلاین */}
       <AnimatePresence>
         {!online && (
@@ -248,7 +261,7 @@ function BottomLink({ to, icon, label }: { to: string; icon: IconName; label: st
       to={to}
       end={to === '/'}
       className={({ isActive }) =>
-        `flex flex-col items-center gap-0.5 px-3 py-1 transition ${
+        `flex flex-col items-center gap-0.5 px-3 py-1 transition active:scale-90 ${
           isActive ? 'text-white' : 'text-white/45'
         }`
       }
