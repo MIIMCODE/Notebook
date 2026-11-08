@@ -57,7 +57,14 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease
+          set +e
+          ./gradlew assembleRelease --stacktrace 2>&1 | tee "$RUNNER_TEMP/gradle.log"
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ne 0 ]; then
+            { echo '### Gradle release failed'; echo '```'; grep -A10 'What went wrong' "$RUNNER_TEMP/gradle.log" | head -50; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            grep -E 'What went wrong|error:|Caused by:|FAILURE:' "$RUNNER_TEMP/gradle.log" | head -15 | while IFS= read -r l; do echo "::error::$l"; done
+          fi
+          exit "$code"
 
       - name: Gradle — debug build
         if: env.YADCHE_KEYSTORE_BASE64 == ''
@@ -67,7 +74,14 @@ jobs:
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          set +e
+          ./gradlew assembleDebug --stacktrace 2>&1 | tee "$RUNNER_TEMP/gradle.log"
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ne 0 ]; then
+            { echo '### Gradle debug failed'; echo '```'; grep -A10 'What went wrong' "$RUNNER_TEMP/gradle.log" | head -50; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            grep -E 'What went wrong|error:|Caused by:|FAILURE:' "$RUNNER_TEMP/gradle.log" | head -15 | while IFS= read -r l; do echo "::error::$l"; done
+          fi
+          exit "$code"
 
       - name: Collect APK
         run: |
