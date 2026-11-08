@@ -8,6 +8,7 @@ import Button from '../../components/ui/Button'
 import { EmptyState, inputClass, NOTE_COLORS } from '../../components/ui/Primitives'
 import { Modal, Confirm } from '../../components/ui/Modal'
 import { motion, AnimatePresence } from 'framer-motion'
+import MaterialIcon from '../../components/ui/MaterialIcon'
 import { jalaliDayKey, toDigits } from '../../lib/jalali'
 import type { Habit } from '../../db/types'
 
@@ -124,7 +125,12 @@ export function HabitsPage() {
                         <div className="flex items-center gap-2">
                           {streak > 0 && (
                             <span className="flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[10px] font-bold text-amber-300">
-                              🔥 {toDigits(streak, locale)} {t('habits.streak')}
+                              <MaterialIcon
+                                name="local_fire_department"
+                                size={13}
+                                className="text-amber-400"
+                              />
+                              {toDigits(streak, locale)} {t('habits.streak')}
                             </span>
                           )}
                           <button

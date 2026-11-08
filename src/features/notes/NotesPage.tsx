@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'
@@ -28,6 +29,18 @@ export function NotesPage() {
   const [newFolderOpen, setNewFolderOpen] = useState(false)
   const [folderName, setFolderName] = useState('')
   const [confirmTrash, setConfirmTrash] = useState<Note | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // میان‌بر PWA: ?new=1 → شیت یادداشت جدید
+  useEffect(() => {
+    if (searchParams.has('new')) {
+      setSheetOpen(true)
+      const next = new URLSearchParams(searchParams)
+      next.delete('new')
+      setSearchParams(next, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const notes = useLiveQuery(() => db.notes.toArray(), [], undefined)
   const folders = useLiveQuery(() => foldersRepo.all(), [], [])

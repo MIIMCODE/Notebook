@@ -7,18 +7,20 @@ import Icon from '../../components/ui/Icon'
 import { Modal, Confirm } from '../../components/ui/Modal'
 import { EmptyState, inputClass } from '../../components/ui/Primitives'
 import { motion, AnimatePresence } from 'framer-motion'
+import MaterialIcon from '../../components/ui/MaterialIcon'
+import type { GlyphName } from '../../components/ui/glyphs'
 import { formatJDate, toDigits, toJalali } from '../../lib/jalali'
 import type { Expense } from '../../db/types'
 
 type ExpenseCategory = 'food' | 'transport' | 'home' | 'health' | 'fun' | 'other'
 
-const CATEGORY_META: Record<ExpenseCategory, { emoji: string; key: string; color: string }> = {
-  food: { emoji: '🍽️', key: 'expenses.catFood', color: '#F59E0B' },
-  transport: { emoji: '🚌', key: 'expenses.catTransport', color: '#38BDF8' },
-  home: { emoji: '🏠', key: 'expenses.catHome', color: '#34D399' },
-  health: { emoji: '💊', key: 'expenses.catHealth', color: '#F472B6' },
-  fun: { emoji: '🎮', key: 'expenses.catFun', color: '#A78BFA' },
-  other: { emoji: '📦', key: 'expenses.catOther', color: '#94A3B8' },
+const CATEGORY_META: Record<ExpenseCategory, { icon: GlyphName; key: string; color: string }> = {
+  food: { icon: 'restaurant', key: 'expenses.catFood', color: '#F59E0B' },
+  transport: { icon: 'directions_bus', key: 'expenses.catTransport', color: '#38BDF8' },
+  home: { icon: 'home', key: 'expenses.catHome', color: '#34D399' },
+  health: { icon: 'health_and_safety', key: 'expenses.catHealth', color: '#F472B6' },
+  fun: { icon: 'sports_esports', key: 'expenses.catFun', color: '#A78BFA' },
+  other: { icon: 'inventory_2', key: 'expenses.catOther', color: '#94A3B8' },
 }
 const CATEGORIES = Object.keys(CATEGORY_META) as ExpenseCategory[]
 
@@ -107,7 +109,9 @@ export function ExpensesPage() {
           const meta = CATEGORY_META[cat]
           return (
             <div key={cat} className="flex items-center gap-3">
-              <span className="w-6 text-center">{meta.emoji}</span>
+              <span className="flex w-6 justify-center" style={{ color: meta.color }}>
+                <MaterialIcon name={meta.icon} size={16} />
+              </span>
               <span className="w-20 shrink-0 truncate text-[11px] font-semibold text-white/60">
                 {t(meta.key)}
               </span>
@@ -164,10 +168,10 @@ export function ExpensesPage() {
                   className="glass group flex items-center gap-3 rounded-2xl px-4 py-3"
                 >
                   <span
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-lg"
-                    style={{ background: `${meta.color}22` }}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl"
+                    style={{ background: `${meta.color}22`, color: meta.color }}
                   >
-                    {meta.emoji}
+                    <MaterialIcon name={meta.icon} size={18} />
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold" dir="auto">
@@ -228,7 +232,7 @@ export function ExpensesPage() {
                         : 'border-white/10 bg-white/5 text-white/55'
                     }`}
                   >
-                    <span className="text-lg">{meta.emoji}</span>
+                    <MaterialIcon name={meta.icon} size={20} />
                     {t(meta.key)}
                   </button>
                 )

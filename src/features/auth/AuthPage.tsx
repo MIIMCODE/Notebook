@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { signIn, signUp } from './auth'
 import { useI18n } from '../../i18n'
+import MaterialIcon from '../../components/ui/MaterialIcon'
 import { useUi } from '../../stores/ui'
 import Logo from '../../components/Logo'
 import Button from '../../components/ui/Button'
@@ -55,8 +56,8 @@ export function AuthPage() {
           animate={{ opacity: 1, y: 0 }}
           className="glass flex max-w-sm flex-col items-center gap-4 rounded-3xl p-8 text-center"
         >
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-rose-accent">
-            ✉️
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-rose-accent text-white">
+            <MaterialIcon name="mail" size={26} />
           </span>
           <h1 className="text-lg font-extrabold">{t('auth.checkEmail')}</h1>
           <p className="text-sm text-white/55">{email}</p>

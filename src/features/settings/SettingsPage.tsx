@@ -11,6 +11,7 @@ import Button from '../../components/ui/Button'
 import { Confirm, Modal } from '../../components/ui/Modal'
 import { Switch } from '../../components/ui/Primitives'
 import { useSession } from '../auth/useSession'
+import Logo from '../../components/Logo'
 import { signOut, forceSync } from '../auth/auth'
 import { useSyncStatus } from '../../sync/useSyncStatus'
 import { isSupabaseConfigured } from '../../sync/client'
@@ -429,14 +430,14 @@ export function SettingsPage() {
       {/* درباره */}
       <Section icon="sparkle" title={t('settings.about')}>
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 via-rose-accent to-amber-accent text-2xl">
-            📓
+          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl">
+            <Logo className="h-14 w-14" bare />
           </div>
           <div>
             <div className="font-extrabold">{t('appName')}</div>
             <div className="text-xs text-white/50">{t('tagline')}</div>
             <div className="mt-1 text-[11px] text-white/35">
-              {t('settings.version')} 0.1.0
+              {t('settings.version')} {__APP_VERSION__}
               {lastSyncAt > 0 &&
                 ` · ${t('settings.lastSync', { t: relativeTime(lastSyncAt, locale) })}`}
             </div>

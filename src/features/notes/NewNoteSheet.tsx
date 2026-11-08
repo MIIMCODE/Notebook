@@ -6,6 +6,7 @@ import { useI18n } from '../../i18n'
 import Icon, { type IconName } from '../../components/ui/Icon'
 import type { NoteType } from '../../db/types'
 import { TEMPLATES } from '../../lib/templates'
+import MaterialIcon from '../../components/ui/MaterialIcon'
 
 const TYPES: { type: NoteType; icon: IconName; color: string; desc: string }[] = [
   { type: 'text', icon: 'book', color: '#8B5CF6', desc: 'text' },
@@ -106,7 +107,7 @@ export function NewNoteSheet({
                     onClick={() => void createFromTemplate(tpl.id)}
                     className="flex flex-col items-center gap-1.5 rounded-2xl border border-white/8 bg-white/5 p-3 transition hover:border-brand-400/40 hover:bg-white/10"
                   >
-                    <span className="text-xl">{tpl.emoji}</span>
+                    <MaterialIcon name={tpl.icon} size={26} className="text-white/85" />
                     <span className="text-[11px] font-semibold text-white/75">
                       {t(tpl.titleKey)}
                     </span>

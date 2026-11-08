@@ -1,7 +1,7 @@
 {
   "name": "yadche",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "یادچه — دفترچه یادداشت حرفه‌ای، آفلاین و همگام",
   "type": "module",
   "scripts": {
@@ -26,6 +26,7 @@
     "@capacitor/haptics": "^7.0.0",
     "@capacitor/local-notifications": "^7.0.0",
     "@capacitor/splash-screen": "^7.0.0",
+    "@material-symbols/svg-400": "^0.48.3",
     "@supabase/supabase-js": "^2.49.0",
     "@tiptap/extension-highlight": "^2.10.4",
     "@tiptap/extension-image": "^2.10.4",

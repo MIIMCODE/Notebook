@@ -295,7 +295,7 @@ const fa: Dict = {
   'pomodoro.resume': 'ادامه',
   'pomodoro.reset': 'بازنشانی',
   'pomodoro.sessions': 'جلسات امروز',
-  'pomodoro.done': 'تمام شد! 🎉',
+  'pomodoro.done': 'تمام شد!',
   'pomodoro.minutes': '{n} دقیقه',
 
   'expenses.title': 'هزینه‌ها',
@@ -631,7 +631,7 @@ const en: Dict = {
   'pomodoro.resume': 'Resume',
   'pomodoro.reset': 'Reset',
   'pomodoro.sessions': "Today's sessions",
-  'pomodoro.done': 'Done! 🎉',
+  'pomodoro.done': 'Done!',
   'pomodoro.minutes': '{n} min',
 
   'expenses.title': 'Expenses',

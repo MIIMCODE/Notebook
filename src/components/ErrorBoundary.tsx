@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import MaterialIcon from './ui/MaterialIcon'
 
 interface Props {
   children: ReactNode
@@ -32,7 +33,7 @@ export class ErrorBoundary extends Component<Props, State> {
           dir="rtl"
           className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-ink-950 px-6 text-center text-white"
         >
-          <div className="text-5xl">😵</div>
+          <MaterialIcon name="error" size={48} className="text-red-300" />
           <h1 className="text-xl font-bold">یادچه از کار ایستاد</h1>
           <p className="max-w-md text-sm text-white/60">
             یک خطای غیرمنتظره رخ داد. داده‌های تو محلی و سالم‌اند؛ کافی است دوباره تلاش کنی.

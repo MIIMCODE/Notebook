@@ -5,6 +5,8 @@ import { journalRepo } from '../../db/repos/modules'
 import { useI18n } from '../../i18n'
 import Icon from '../../components/ui/Icon'
 import Button from '../../components/ui/Button'
+import MaterialIcon from '../../components/ui/MaterialIcon'
+import type { GlyphName } from '../../components/ui/glyphs'
 import {
   formatJDate,
   jalaliDayKey,
@@ -185,7 +187,11 @@ export function CalendarPage() {
           <div className="flex flex-col gap-2">
             {selectedJournal && (
               <div className="flex items-center gap-2 rounded-xl bg-pink-400/10 px-3 py-2 text-sm">
-                <span>{MOOD_EMOJI[selectedJournal.mood ?? 3]}</span>
+                <MaterialIcon
+                  name={MOOD_ICON[selectedJournal.mood ?? 3]}
+                  size={18}
+                  className="text-pink-300"
+                />
                 <span className="truncate text-white/75" dir="auto">
                   {selectedJournal.text || t('journal.title')}
                 </span>
@@ -226,7 +232,13 @@ export function CalendarPage() {
   )
 }
 
-const MOOD_EMOJI: Record<number, string> = { 1: '😞', 2: '😕', 3: '😐', 4: '🙂', 5: '🤩' }
+const MOOD_ICON: Record<number, GlyphName> = {
+  1: 'sentiment_very_dissatisfied',
+  2: 'sentiment_dissatisfied',
+  3: 'sentiment_neutral',
+  4: 'sentiment_satisfied',
+  5: 'sentiment_very_satisfied',
+}
 
 function Legend({ color, label }: { color: string; label: string }) {
   return (

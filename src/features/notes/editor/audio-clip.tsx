@@ -1,4 +1,5 @@
 import { Node, mergeAttributes } from '@tiptap/core'
+import MaterialIcon from '../../../components/ui/MaterialIcon'
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
 
 function AudioClipView({ node, deleteNode }: NodeViewProps) {
@@ -11,7 +12,7 @@ function AudioClipView({ node, deleteNode }: NodeViewProps) {
         data-drag-handle
       >
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-rose-accent text-white">
-          ♪
+          <MaterialIcon name="music_note" size={20} />
         </span>
         {src ? (
           <audio controls src={src} className="h-10 flex-1 min-w-0" />
@@ -24,7 +25,7 @@ function AudioClipView({ node, deleteNode }: NodeViewProps) {
           aria-label="حذف صدا"
           className="rounded-lg p-2 text-white/50 transition hover:bg-white/10 hover:text-red-300"
         >
-          ✕
+          <MaterialIcon name="close" size={16} />
         </button>
       </div>
     </NodeViewWrapper>

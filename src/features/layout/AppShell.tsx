@@ -101,12 +101,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="fixed inset-y-0 start-0 z-30 hidden w-64 flex-col border-e border-white/8 bg-ink-900/70 backdrop-blur-2xl md:flex">
         <div className="flex items-center gap-2.5 px-5 py-5">
           <Logo className="h-9 w-9" />
-          <div>
+          <div className="min-w-0">
             <div className="text-base font-extrabold leading-none text-gradient">
               {t('appName')}
             </div>
-            <div className="mt-1 text-[10px] text-white/40">{t('tagline')}</div>
+            <div className="mt-1 truncate text-[10px] text-white/40">{t('tagline')}</div>
           </div>
+          <button
+            onClick={() => setLocale(locale === 'fa' ? 'en' : 'fa')}
+            aria-label={locale === 'fa' ? 'English' : 'فارسی'}
+            className="ms-auto shrink-0 rounded-lg border border-white/10 bg-white/6 px-2 py-1 text-[11px] font-bold text-white/65 transition hover:bg-white/12 hover:text-white"
+          >
+            {locale === 'fa' ? 'EN' : 'فا'}
+          </button>
         </div>
 
         <nav className="flex flex-col gap-0.5 px-3">

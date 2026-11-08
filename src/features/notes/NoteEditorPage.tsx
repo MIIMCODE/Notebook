@@ -136,7 +136,7 @@ export function NoteEditorPage() {
   return (
     <div className="flex flex-col pb-16">
       {/* هدر ویرایشگر */}
-      <div className="sticky top-0 z-30 -mx-4 mb-2 flex items-center gap-1 border-b border-white/8 bg-ink-950/85 px-3 py-2.5 backdrop-blur-xl">
+      <div className="no-scrollbar sticky top-0 z-30 -mx-4 mb-2 flex items-center gap-1 overflow-x-auto border-b border-white/8 bg-ink-950/85 px-3 py-2.5 backdrop-blur-xl">
         <Button
           variant="ghost"
           size="icon"
@@ -155,62 +155,64 @@ export function NoteEditorPage() {
             {!saving && <span className="opacity-60">{t('editor.autoSaved')}</span>}
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          icon="pin"
-          aria-label={t('notes.pin')}
-          className={note.isPinned ? 'text-amber-300' : ''}
-          onClick={() => void notesRepo.togglePin(note.id)}
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          icon="history"
-          aria-label={t('notes.versionHistory')}
-          onClick={() => void openHistory()}
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          icon="tag"
-          aria-label={t('notes.tags')}
-          onClick={() => void openTags()}
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          icon="palette"
-          aria-label={t('notes.color')}
-          onClick={() => setColorOpen(true)}
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          icon="download"
-          aria-label={t('export.pdf')}
-          title={t('export.pdf')}
-          onClick={() => {
-            toast(t('export.printHint'), 'default')
-            window.setTimeout(() => window.print(), 300)
-          }}
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          icon="bell"
-          aria-label={t('reminder.set')}
-          className={reminderAt ? 'text-amber-300' : ''}
-          onClick={() => setReminderOpen(true)}
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          icon="trash"
-          aria-label={t('notes.moveToTrash')}
-          className="hover:text-red-300"
-          onClick={() => setConfirmTrash(true)}
-        />
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            icon="pin"
+            aria-label={t('notes.pin')}
+            className={note.isPinned ? 'text-amber-300' : ''}
+            onClick={() => void notesRepo.togglePin(note.id)}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            icon="history"
+            aria-label={t('notes.versionHistory')}
+            onClick={() => void openHistory()}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            icon="tag"
+            aria-label={t('notes.tags')}
+            onClick={() => void openTags()}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            icon="palette"
+            aria-label={t('notes.color')}
+            onClick={() => setColorOpen(true)}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            icon="download"
+            aria-label={t('export.pdf')}
+            title={t('export.pdf')}
+            onClick={() => {
+              toast(t('export.printHint'), 'default')
+              window.setTimeout(() => window.print(), 300)
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            icon="bell"
+            aria-label={t('reminder.set')}
+            className={reminderAt ? 'text-amber-300' : ''}
+            onClick={() => setReminderOpen(true)}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            icon="trash"
+            aria-label={t('notes.moveToTrash')}
+            className="hover:text-red-300"
+            onClick={() => setConfirmTrash(true)}
+          />
+        </div>
       </div>
 
       {/* نوار رنگ یادداشت */}

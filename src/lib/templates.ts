@@ -1,4 +1,5 @@
 import type { JSONContent } from '@tiptap/core'
+import type { GlyphName } from '../components/ui/glyphs'
 
 /** قالب‌های یادداشت — خروجی: { plain, tiptap } */
 
@@ -43,7 +44,7 @@ function code(text: string, lang = ''): JSONContent {
 export interface Template {
   id: string
   titleKey: string
-  emoji: string
+  icon: GlyphName
   make: () => { plain: string; tiptap: JSONContent }
 }
 
@@ -51,7 +52,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'daily',
     titleKey: 'templates.daily',
-    emoji: '☀️',
+    icon: 'calendar_today',
     make: () => {
       const t = doc(
         heading('برنامه‌ی امروز'),
@@ -69,7 +70,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'shopping',
     titleKey: 'templates.shopping',
-    emoji: '🛒',
+    icon: 'shopping_cart',
     make: () => {
       const t = doc(heading('لیست خرید'), todo(['نان و شیر', 'میوه و سبزیجات', '']))
       return { plain: 'لیست خرید', tiptap: t }
@@ -78,7 +79,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'meeting',
     titleKey: 'templates.meeting',
-    emoji: '📝',
+    icon: 'groups',
     make: () => {
       const t = doc(
         heading('یادداشت جلسه'),
@@ -97,7 +98,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'code',
     titleKey: 'templates.code',
-    emoji: '💻',
+    icon: 'code',
     make: () => {
       const t = doc(
         heading('اسکریپت'),
@@ -109,7 +110,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'travel',
     titleKey: 'templates.travel',
-    emoji: '✈️',
+    icon: 'flight',
     make: () => {
       const t = doc(
         heading('برنامه‌ی سفر'),
@@ -128,7 +129,7 @@ export const TEMPLATES: Template[] = [
   {
     id: 'blank',
     titleKey: 'templates.blank',
-    emoji: '📄',
+    icon: 'description',
     make: () => ({ plain: '', tiptap: doc(para('')) }),
   },
 ]

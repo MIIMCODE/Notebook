@@ -6,23 +6,24 @@ import Icon from '../../components/ui/Icon'
 import Button from '../../components/ui/Button'
 import { inputClass } from '../../components/ui/Primitives'
 import { motion } from 'framer-motion'
+import MaterialIcon from '../../components/ui/MaterialIcon'
 import { formatJDateFull, jalaliDayKey, toDigits } from '../../lib/jalali'
 
 const MOODS = [
-  { v: 1, emoji: '😞', key: 'journal.mood1' },
-  { v: 2, emoji: '😕', key: 'journal.mood2' },
-  { v: 3, emoji: '😐', key: 'journal.mood3' },
-  { v: 4, emoji: '🙂', key: 'journal.mood4' },
-  { v: 5, emoji: '🤩', key: 'journal.mood5' },
+  { v: 1, icon: 'sentiment_very_dissatisfied' as const, key: 'journal.mood1' },
+  { v: 2, icon: 'sentiment_dissatisfied' as const, key: 'journal.mood2' },
+  { v: 3, icon: 'sentiment_neutral' as const, key: 'journal.mood3' },
+  { v: 4, icon: 'sentiment_satisfied' as const, key: 'journal.mood4' },
+  { v: 5, icon: 'sentiment_very_satisfied' as const, key: 'journal.mood5' },
 ]
 
 const WEATHERS = [
-  { id: 'sunny', emoji: '☀️' },
-  { id: 'cloudy', emoji: '☁️' },
-  { id: 'rainy', emoji: '🌧️' },
-  { id: 'snowy', emoji: '❄️' },
-  { id: 'windy', emoji: '💨' },
-  { id: 'stormy', emoji: '⛈️' },
+  { id: 'sunny', icon: 'wb_sunny' as const },
+  { id: 'cloudy', icon: 'cloud' as const },
+  { id: 'rainy', icon: 'rainy' as const },
+  { id: 'snowy', icon: 'ac_unit' as const },
+  { id: 'windy', icon: 'air' as const },
+  { id: 'stormy', icon: 'thunderstorm' as const },
 ]
 
 /** کلید روز از یک date میلادی (برای ناوبری) */
@@ -120,13 +121,13 @@ export function JournalPage() {
                 void save({ mood: next })
               }}
               aria-label={t(m.key)}
-              className={`flex h-11 w-11 items-center justify-center rounded-2xl text-xl transition ${
+              className={`flex h-11 w-11 items-center justify-center rounded-2xl transition ${
                 mood === m.v
-                  ? 'bg-gradient-to-br from-brand-500/50 to-rose-accent/40 shadow-[0_0_16px_rgba(236,72,153,0.4)]'
-                  : 'bg-white/6 hover:bg-white/10'
+                  ? 'bg-gradient-to-br from-brand-500/50 to-rose-accent/40 text-white shadow-[0_0_16px_rgba(236,72,153,0.4)]'
+                  : 'bg-white/6 text-white/70 hover:bg-white/10'
               }`}
             >
-              {m.emoji}
+              <MaterialIcon name={m.icon} size={24} />
             </motion.button>
           ))}
         </div>
@@ -143,11 +144,13 @@ export function JournalPage() {
                 void save({ weather: next })
               }}
               aria-label={t(`journal.${w.id}`)}
-              className={`flex h-9 w-9 items-center justify-center rounded-xl text-lg transition ${
-                weather === w.id ? 'bg-white/16 ring-2 ring-brand-400/60' : 'bg-white/6'
+              className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
+                weather === w.id
+                  ? 'bg-white/16 text-white ring-2 ring-brand-400/60'
+                  : 'bg-white/6 text-white/70'
               }`}
             >
-              {w.emoji}
+              <MaterialIcon name={w.icon} size={18} />
             </button>
           ))}
         </div>
@@ -202,7 +205,7 @@ function RecentStrip({ current, onPick }: { current: string; onPick: (d: string)
       <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
         {withRecord.map((d) => {
           const rec = all.find((r) => r.day === d.key)!
-          const emoji = MOODS.find((m) => m.v === rec.mood)?.emoji ?? '·'
+          const moodIcon = MOODS.find((m) => m.v === rec.mood)?.icon ?? null
           return (
             <button
               key={d.key}
@@ -213,7 +216,11 @@ function RecentStrip({ current, onPick }: { current: string; onPick: (d: string)
                   : 'border-white/8 bg-white/5 hover:bg-white/10'
               }`}
             >
-              <span className="text-lg">{emoji}</span>
+              {moodIcon ? (
+                <MaterialIcon name={moodIcon} size={20} className="text-white/85" />
+              ) : (
+                <span className="text-lg text-white/40">·</span>
+              )}
               <span className="text-[10px] font-bold text-white/55">
                 {toDigits(d.date.getDate(), locale)}
               </span>

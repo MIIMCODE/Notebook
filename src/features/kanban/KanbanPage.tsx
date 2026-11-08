@@ -27,9 +27,8 @@ export function KanbanPage() {
 
   const boards = useLiveQuery(() => db.boards.toArray(), [ready], [])
   const board = boards.find((b) => !b.deletedAt) ?? null
-  const columns = useLiveQuery(
-    async (): Promise<BoardColumn[]> =>
-      board ? db.boardColumns.where('boardId').equals(board.id).sortBy('position') : [],
+  const columns = useLiveQuery<BoardColumn[], BoardColumn[]>(
+    async () => (board ? db.boardColumns.where('boardId').equals(board.id).sortBy('position') : []),
     [board?.id],
     [],
   )
@@ -67,6 +66,15 @@ export function KanbanPage() {
               cards={(cards ?? []).filter((c) => c.columnId === col.id)}
               locale={locale}
               dragOver={dragOver === col.id}
+              hasPrev={columns.indexOf(col) > 0}
+              hasNext={columns.indexOf(col) < columns.length - 1}
+              onMove={(cardId, delta) => {
+                const i = columns.findIndex((c) => c.id === col.id)
+                const target = columns[i + delta]
+                if (!target) return
+                const pos = (cards ?? []).filter((c) => c.columnId === target.id).length
+                void boardsRepo.moveCard(cardId, target.id, pos)
+              }}
               onDragOver={() => setDragOver(col.id)}
               onDragLeave={() => setDragOver((v) => (v === col.id ? null : v))}
               onDrop={async (cardId) => {
@@ -166,22 +174,28 @@ function KanbanColumn({
   cards,
   locale,
   dragOver,
+  hasPrev,
+  hasNext,
   onDragOver,
   onDragLeave,
   onDrop,
   onAdd,
   onEdit,
+  onMove,
   onDeleteColumn,
 }: {
   column: BoardColumn
   cards: BoardCard[]
   locale: 'fa' | 'en'
   dragOver: boolean
+  hasPrev: boolean
+  hasNext: boolean
   onDragOver: () => void
   onDragLeave: () => void
   onDrop: (cardId: string | null) => void
   onAdd: () => void
   onEdit: (c: BoardCard) => void
+  onMove: (cardId: string, delta: -1 | 1) => void
   onDeleteColumn: () => void
 }) {
   const { t } = useI18n()
@@ -251,8 +265,31 @@ function KanbanColumn({
               )}
               <div className="mt-2 flex items-center justify-between text-[10px] text-white/35">
                 <span>{relativeTime(card.updatedAt, locale)}</span>
-                <span className="flex gap-1">
-                  <Icon name="more" size={12} />
+                <span className="flex items-center gap-0.5">
+                  {hasPrev && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onMove(card.id, -1)
+                      }}
+                      aria-label={t('kanban.moveLeft')}
+                      className="rounded-md p-1 text-white/45 transition hover:bg-white/12 hover:text-white active:scale-90"
+                    >
+                      <Icon name="chevronRight" size={14} className="rotate-180" />
+                    </button>
+                  )}
+                  {hasNext && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onMove(card.id, 1)
+                      }}
+                      aria-label={t('kanban.moveRight')}
+                      className="rounded-md p-1 text-white/45 transition hover:bg-white/12 hover:text-white active:scale-90"
+                    >
+                      <Icon name="chevronRight" size={14} />
+                    </button>
+                  )}
                 </span>
               </div>
             </motion.div>
