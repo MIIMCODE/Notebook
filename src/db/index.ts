@@ -35,6 +35,7 @@ export const DEFAULT_SETTINGS: LocalSettings = {
   locale: 'fa',
   lockEnabled: false,
   pinHash: null,
+  bioId: null,
   onboarded: false,
 }
 

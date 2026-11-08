@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { notesRepo } from '../../db/repos/notes'
 import { useI18n } from '../../i18n'
 import Icon, { type IconName } from '../../components/ui/Icon'
 import type { NoteType } from '../../db/types'
+import { TEMPLATES } from '../../lib/templates'
 
 const TYPES: { type: NoteType; icon: IconName; color: string; desc: string }[] = [
   { type: 'text', icon: 'book', color: '#8B5CF6', desc: 'text' },
@@ -26,9 +28,25 @@ export function NewNoteSheet({
 }) {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const [tab, setTab] = useState<'type' | 'templates'>('type')
 
   const create = async (type: NoteType) => {
     const note = await notesRepo.create({ type, folderId: folderId ?? null })
+    onClose()
+    navigate(`/note/${note.id}`, { state: { fresh: true } })
+  }
+
+  const createFromTemplate = async (tplId: string) => {
+    const tpl = TEMPLATES.find((x) => x.id === tplId)
+    if (!tpl) return
+    const { plain, tiptap } = tpl.make()
+    const note = await notesRepo.create({
+      type: 'text',
+      folderId: folderId ?? null,
+      title: t(tpl.titleKey),
+      content: tiptap,
+    })
+    await notesRepo.update(note.id, { plainText: plain })
     onClose()
     navigate(`/note/${note.id}`, { state: { fresh: true } })
   }
@@ -52,8 +70,54 @@ export function NewNoteSheet({
             transition={{ type: 'spring', stiffness: 330, damping: 32 }}
           >
             <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/20" />
-            <h2 className="mb-4 text-center text-base font-bold">{t('action.newNote')}</h2>
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+            <h2 className="mb-3 text-center text-base font-bold">{t('action.newNote')}</h2>
+
+            {/* سربرگ‌ها */}
+            <div className="mx-auto mb-4 flex w-fit gap-1 rounded-full bg-white/6 p-1">
+              {(
+                [
+                  { id: 'type', label: t('new.type') },
+                  { id: 'templates', label: t('templates.title') },
+                ] as const
+              ).map((x) => (
+                <button
+                  key={x.id}
+                  onClick={() => setTab(x.id)}
+                  className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${
+                    tab === x.id
+                      ? 'bg-gradient-to-r from-brand-500 to-rose-accent text-white'
+                      : 'text-white/55'
+                  }`}
+                >
+                  {x.label}
+                </button>
+              ))}
+            </div>
+
+            {tab === 'templates' && (
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                {TEMPLATES.map((tpl, i) => (
+                  <motion.button
+                    key={tpl.id}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04 }}
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => void createFromTemplate(tpl.id)}
+                    className="flex flex-col items-center gap-1.5 rounded-2xl border border-white/8 bg-white/5 p-3 transition hover:border-brand-400/40 hover:bg-white/10"
+                  >
+                    <span className="text-xl">{tpl.emoji}</span>
+                    <span className="text-[11px] font-semibold text-white/75">
+                      {t(tpl.titleKey)}
+                    </span>
+                  </motion.button>
+                ))}
+              </div>
+            )}
+
+            <div
+              className={`grid grid-cols-3 gap-3 sm:grid-cols-4 ${tab === 'templates' ? 'hidden' : ''}`}
+            >
               {TYPES.map((item, i) => (
                 <motion.button
                   key={item.type}

@@ -38,6 +38,8 @@ type IconName =
   | 'download'
   | 'upload'
   | 'history'
+  | 'play'
+  | 'pause'
   | 'bell'
   | 'palette'
   | 'globe'
@@ -52,6 +54,7 @@ type IconName =
   | 'filter'
   | 'sort'
   | 'lock'
+  | 'fingerprint'
   | 'cloud'
   | 'cloudOff'
   | 'refresh'
@@ -231,6 +234,7 @@ const paths: Record<IconName, JSX.Element> = {
   ),
   download: <path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 20h16" />,
   upload: <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 20h16" />,
+  pause: <path d="M9 5v14M15 5v14" />,
   history: (
     <>
       <path d="M3.5 12a8.5 8.5 0 1 0 2.5-6L3 9" />
@@ -282,6 +286,14 @@ const paths: Record<IconName, JSX.Element> = {
     <>
       <rect x="5" y="11" width="14" height="10" rx="2" />
       <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  fingerprint: (
+    <>
+      <path d="M12 10.5a1.5 1.5 0 0 1 1.5 1.5c0 3-.5 5.5-1.5 8" />
+      <path d="M9 21c1.2-2.7 1.7-5.4 1.7-9A1.3 1.3 0 0 1 13.4 12c0 1.4-.1 2.8-.4 4.2" />
+      <path d="M6.3 17.5C7 15.6 7.3 13.8 7.3 12a4.7 4.7 0 0 1 9.4 0c0 1 0 1.9-.2 2.8" />
+      <path d="M4.5 13.5A7.5 7.5 0 0 1 12 6a7.5 7.5 0 0 1 7.5 7.5" />
     </>
   ),
   cloud: <path d="M7 18a4.5 4.5 0 1 1 .8-8.9A6 6 0 0 1 19 11.5 3.5 3.5 0 0 1 18 18H7z" />,

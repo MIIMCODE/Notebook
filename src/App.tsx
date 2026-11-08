@@ -14,11 +14,19 @@ import { TrashPage, ArchivePage } from './features/notes/ListsPages'
 import SettingsPage from './features/settings/SettingsPage'
 import AuthPage from './features/auth/AuthPage'
 import { watchAuth } from './features/auth/auth'
+import TasksPage from './features/tasks/TasksPage'
+import KanbanPage from './features/kanban/KanbanPage'
+import HabitsPage from './features/habits/HabitsPage'
+import JournalPage from './features/journal/JournalPage'
+import CalendarPage from './features/calendar/CalendarPage'
+import PomodoroPage from './features/pomodoro/PomodoroPage'
+import ExpensesPage from './features/expenses/ExpensesPage'
 import { openDb, getSettings } from './db'
-import Icon, { type IconName } from './components/ui/Icon'
+import { rescheduleAllOnBoot } from './lib/reminders'
+import LockScreen, { useLock } from './features/lock/LockScreen'
+import { isSessionUnlocked } from './lib/lock'
 import Button from './components/ui/Button'
 import Logo from './components/Logo'
-import { MODULE_NAV } from './features/layout/AppShell'
 
 function Page({ children }: { children: React.ReactNode }) {
   return (
@@ -30,30 +38,6 @@ function Page({ children }: { children: React.ReactNode }) {
     >
       {children}
     </motion.div>
-  )
-}
-
-/** صفحه‌ی در حال ساخت ماژول (در مرحله ۵ جایگزین می‌شود) */
-function ModuleSoon({ icon, titleKey }: { icon: IconName; titleKey: string }) {
-  const { t } = useI18n()
-  const navigate = useNavigate()
-  return (
-    <Page>
-      <div className="glass flex flex-col items-center gap-4 rounded-3xl px-6 py-16 text-center">
-        <motion.div
-          animate={{ rotate: [0, -6, 6, 0] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-          className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-500/40 to-rose-accent/30"
-        >
-          <Icon name={icon} size={38} className="text-brand-200" />
-        </motion.div>
-        <h1 className="text-2xl font-extrabold">{t(titleKey)}</h1>
-        <p className="text-sm text-white/50">{t('module.soon')} ✨</p>
-        <Button variant="glass" icon="home" onClick={() => navigate('/')}>
-          {t('nav.home')}
-        </Button>
-      </div>
-    </Page>
   )
 }
 
@@ -134,13 +118,62 @@ function AnimatedRoutes() {
             </Page>
           }
         />
-        {MODULE_NAV.map((m) => (
-          <Route
-            key={m.to}
-            path={m.to}
-            element={<ModuleSoon icon={m.icon} titleKey={m.labelKey} />}
-          />
-        ))}
+        <Route
+          path="/tasks"
+          element={
+            <Page>
+              <TasksPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/kanban"
+          element={
+            <Page>
+              <KanbanPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/habits"
+          element={
+            <Page>
+              <HabitsPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/journal"
+          element={
+            <Page>
+              <JournalPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/calendar"
+          element={
+            <Page>
+              <CalendarPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/pomodoro"
+          element={
+            <Page>
+              <PomodoroPage />
+            </Page>
+          }
+        />
+        <Route
+          path="/expenses"
+          element={
+            <Page>
+              <ExpensesPage />
+            </Page>
+          }
+        />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
@@ -162,6 +195,8 @@ function InnerApp() {
         await openDb()
         const s = await getSettings()
         applyTheme(s.theme, s.accent as never)
+        rescheduleAllOnBoot()
+        if (s.lockEnabled && !isSessionUnlocked()) useLock.getState().lock()
         useUi.setState({ theme: s.theme, accent: s.accent as never, locale: s.locale })
       } catch (e) {
         console.error('boot failed', e)
@@ -184,6 +219,7 @@ function InnerApp() {
           </ErrorBoundary>
         </AppShell>
       )}
+      <LockScreen />
       <ToastHost />
     </>
   )

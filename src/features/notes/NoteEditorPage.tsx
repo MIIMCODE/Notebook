@@ -14,6 +14,7 @@ import Button from '../../components/ui/Button'
 import { Modal, Confirm } from '../../components/ui/Modal'
 import { ColorPicker, inputClass } from '../../components/ui/Primitives'
 import { relativeTime } from '../../lib/jalali'
+import { scheduleNoteReminder, getReminderFor } from '../../lib/reminders'
 import type { JSONContent } from '@tiptap/core'
 import type { Note } from '../../db/types'
 
@@ -34,6 +35,9 @@ export function NoteEditorPage() {
   const [tagModal, setTagModal] = useState(false)
   const [allTags, setAllTags] = useState<Awaited<ReturnType<typeof tagsRepo.all>>>([])
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [reminderOpen, setReminderOpen] = useState(false)
+  const [reminderAt, setReminderAt] = useState<number | null>(null)
+  const [reminderInput, setReminderInput] = useState('')
   const [versions, setVersions] = useState<Awaited<ReturnType<typeof notesRepo.versions>>>([])
   const [colorOpen, setColorOpen] = useState(false)
   const [confirmTrash, setConfirmTrash] = useState(false)
@@ -82,6 +86,20 @@ export function NoteEditorPage() {
     },
     [persist],
   )
+
+  useEffect(() => {
+    const at = getReminderFor(id)
+    setReminderAt(at)
+    if (at) {
+      const d = new Date(at)
+      const p = (n: number) => String(n).padStart(2, '0')
+      setReminderInput(
+        `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`,
+      )
+    } else {
+      setReminderInput('')
+    }
+  }, [id])
 
   const openTags = async () => {
     setAllTags(await tagsRepo.all())
@@ -165,6 +183,25 @@ export function NoteEditorPage() {
           icon="palette"
           aria-label={t('notes.color')}
           onClick={() => setColorOpen(true)}
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          icon="download"
+          aria-label={t('export.pdf')}
+          title={t('export.pdf')}
+          onClick={() => {
+            toast(t('export.printHint'), 'default')
+            window.setTimeout(() => window.print(), 300)
+          }}
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          icon="bell"
+          aria-label={t('reminder.set')}
+          className={reminderAt ? 'text-amber-300' : ''}
+          onClick={() => setReminderOpen(true)}
         />
         <Button
           variant="ghost"
@@ -341,6 +378,61 @@ export function NoteEditorPage() {
             ))}
           </ul>
         )}
+      </Modal>
+
+      {/* یادآور */}
+      <Modal open={reminderOpen} onClose={() => setReminderOpen(false)} title={t('reminder.title')}>
+        <div className="flex flex-col gap-4">
+          {reminderAt ? (
+            <div className="flex items-center gap-2 rounded-xl bg-amber-400/10 px-3 py-2.5 text-sm text-amber-200">
+              <Icon name="bell" size={14} />
+              {new Date(reminderAt).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-GB')}
+            </div>
+          ) : null}
+          <input
+            type="datetime-local"
+            value={reminderInput}
+            onChange={(e) => setReminderInput(e.target.value)}
+            className={`${inputClass} [color-scheme:dark]`}
+            dir="ltr"
+          />
+          <div className="flex justify-between gap-2">
+            {reminderAt ? (
+              <Button
+                variant="danger"
+                onClick={async () => {
+                  await scheduleNoteReminder(note.id, null)
+                  setReminderAt(null)
+                  setReminderOpen(false)
+                  toast(t('reminder.clear'), 'default')
+                }}
+              >
+                {t('reminder.clear')}
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setReminderOpen(false)}>
+                {t('action.cancel')}
+              </Button>
+              <Button
+                variant="primary"
+                onClick={async () => {
+                  if (!reminderInput) return
+                  const at = new Date(reminderInput).getTime()
+                  if (!Number.isFinite(at)) return
+                  await scheduleNoteReminder(note.id, at)
+                  setReminderAt(at)
+                  setReminderOpen(false)
+                  toast(t('reminder.enabled'), 'success')
+                }}
+              >
+                {t('reminder.set')}
+              </Button>
+            </div>
+          </div>
+        </div>
       </Modal>
 
       {/* رنگ */}

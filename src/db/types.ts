@@ -193,5 +193,7 @@ export interface LocalSettings {
   locale: 'fa' | 'en'
   lockEnabled: boolean
   pinHash: string | null
+  /** شناسه‌ی credential وب‌اوثنتیکیتور (اثر انگشت) — base64url */
+  bioId: string | null
   onboarded: boolean
 }

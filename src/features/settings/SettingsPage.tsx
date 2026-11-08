@@ -8,12 +8,13 @@ import { downloadJson, exportBackup, restoreBackup } from '../../lib/backup'
 import { notesRepo } from '../../db/repos/notes'
 import Icon, { type IconName } from '../../components/ui/Icon'
 import Button from '../../components/ui/Button'
-import { Confirm } from '../../components/ui/Modal'
+import { Confirm, Modal } from '../../components/ui/Modal'
 import { Switch } from '../../components/ui/Primitives'
 import { useSession } from '../auth/useSession'
 import { signOut, forceSync } from '../auth/auth'
 import { useSyncStatus } from '../../sync/useSyncStatus'
 import { isSupabaseConfigured } from '../../sync/client'
+import { enablePin, disableLock, registerBiometric, biometricsAvailable } from '../../lib/lock'
 import { relativeTime } from '../../lib/jalali'
 
 const ACCENTS: { id: Accent; color: string }[] = [
@@ -29,13 +30,26 @@ export function SettingsPage() {
   const navigate = useNavigate()
   const { theme, setTheme, accent, setAccent, toast } = useUi()
   const [lockEnabled, setLockEnabled] = useState(false)
+  const [pinModal, setPinModal] = useState<null | {
+    step: 'first' | 'confirm'
+    first: string
+    value: string
+    error: boolean
+  }>(null)
+  const [bioAvailable, setBioAvailable] = useState(false)
+  const [bioOn, setBioOn] = useState(false)
   const session = useSession()
   const { status, lastSyncAt } = useSyncStatus()
   const [confirmClear, setConfirmClear] = useState(false)
+  const [confirmLockOff, setConfirmLockOff] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    void getSettings().then((s) => setLockEnabled(s.lockEnabled))
+    void getSettings().then((s) => {
+      setLockEnabled(s.lockEnabled)
+      setBioOn(!!s.bioId)
+    })
+    void biometricsAvailable().then(setBioAvailable)
   }, [])
 
   const doBackup = async () => {
@@ -299,13 +313,117 @@ export function SettingsPage() {
           <Switch
             checked={lockEnabled}
             onChange={(v) => {
-              setLockEnabled(v)
-              void saveSettings({ lockEnabled: v })
+              if (v) {
+                setPinModal({ step: 'first', first: '', value: '', error: false })
+              } else {
+                setConfirmLockOff(true)
+              }
             }}
             label={t('settings.lock')}
           />
         </div>
+        {lockEnabled && bioAvailable && (
+          <div className="mt-3 flex items-center justify-between border-t border-white/8 pt-3">
+            <div className="flex items-center gap-2">
+              <Icon name="fingerprint" size={18} className="text-brand-300" />
+              <div className="text-sm font-semibold">{t('lock.useFingerprint')}</div>
+            </div>
+            <Switch
+              checked={bioOn}
+              onChange={(v) => {
+                if (v) {
+                  void registerBiometric().then((ok) => {
+                    setBioOn(ok)
+                    if (ok) toast(t('lock.pinSet'), 'success')
+                    else toast(t('error.generic'), 'error')
+                  })
+                } else {
+                  void saveSettings({ bioId: null })
+                  setBioOn(false)
+                }
+              }}
+              label={t('lock.useFingerprint')}
+            />
+          </div>
+        )}
       </Section>
+
+      {/* مودال ساخت PIN */}
+      <Modal
+        open={!!pinModal}
+        onClose={() => setPinModal(null)}
+        title={pinModal?.step === 'first' ? t('lock.setup') : t('lock.confirmPin')}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <p className="text-xs text-white/50">
+            {pinModal?.step === 'first' ? t('lock.enterPin') : t('lock.confirmPin')}
+          </p>
+          <input
+            autoFocus
+            inputMode="numeric"
+            type="password"
+            maxLength={4}
+            value={pinModal?.value ?? ''}
+            onChange={(e) =>
+              setPinModal(
+                pinModal
+                  ? {
+                      ...pinModal,
+                      value: e.target.value.replace(/\D/g, '').slice(0, 4),
+                      error: false,
+                    }
+                  : null,
+              )
+            }
+            placeholder="••••"
+            className="w-40 rounded-2xl border border-white/15 bg-white/6 px-4 py-3 text-center text-2xl font-black tracking-[0.4em] outline-none focus:border-brand-400"
+            dir="ltr"
+          />
+          {pinModal?.error && (
+            <p className="text-xs font-semibold text-red-400">{t('lock.pinMismatch')}</p>
+          )}
+          <Button
+            variant="primary"
+            className="mt-2 w-full"
+            onClick={async () => {
+              if (!pinModal) return
+              const v = pinModal.value
+              if (!/^\d{4}$/.test(v)) {
+                setPinModal({ ...pinModal, error: true, value: '' })
+                return
+              }
+              if (pinModal.step === 'first') {
+                setPinModal({ step: 'confirm', first: v, value: '', error: false })
+                return
+              }
+              if (v !== pinModal.first) {
+                setPinModal({ ...pinModal, step: 'first', first: '', value: '', error: true })
+                return
+              }
+              await enablePin(v)
+              setLockEnabled(true)
+              setPinModal(null)
+              toast(t('lock.pinSet'), 'success')
+            }}
+          >
+            {t('action.create')}
+          </Button>
+        </div>
+      </Modal>
+
+      <Confirm
+        open={confirmLockOff}
+        title={t('settings.lock')}
+        confirmLabel={t('action.delete')}
+        onCancel={() => setConfirmLockOff(false)}
+        onConfirm={async () => {
+          await disableLock()
+          setLockEnabled(false)
+          setBioOn(false)
+          setConfirmLockOff(false)
+          toast(t('common.deleted'), 'default')
+        }}
+      />
 
       {/* درباره */}
       <Section icon="sparkle" title={t('settings.about')}>

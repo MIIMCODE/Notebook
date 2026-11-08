@@ -244,3 +244,38 @@ html[data-theme='light'] .yc-prose {
 html[data-theme='light'] .yc-prose pre.yc-codeblock {
   background-color: #23213a !important;
 }
+
+/* ——— چاپ / خروجی PDF ——— */
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .no-print,
+  aside,
+  header,
+  nav,
+  button {
+    display: none !important;
+  }
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  .glass,
+  .yc-prose,
+  .print-area {
+    background: #fff !important;
+    border-color: #e5e7eb !important;
+    box-shadow: none !important;
+    color: #111 !important;
+  }
+  .yc-prose * {
+    color: #111 !important;
+  }
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
