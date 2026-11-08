@@ -18,6 +18,27 @@ import { scheduleNoteReminder, getReminderFor } from '../../lib/reminders'
 import type { JSONContent } from '@tiptap/core'
 import type { Note } from '../../db/types'
 
+/** موتور تشخیص گفتار (Chrome: webkitSpeechRecognition) */
+interface VoiceEngine {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  onresult:
+    | ((e: {
+        results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }>
+      }) => void)
+    | null
+  onend: (() => void) | null
+  onerror: (() => void) | null
+  start: () => void
+  abort: () => void
+}
+
+function getVoiceEngine(): (new () => VoiceEngine) | null {
+  const w = window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }
+  return (w.SpeechRecognition ?? w.webkitSpeechRecognition) as (new () => VoiceEngine) | null
+}
+
 export function NoteEditorPage() {
   const { id = '' } = useParams()
   const { t, locale } = useI18n()
@@ -42,6 +63,10 @@ export function NoteEditorPage() {
   const [colorOpen, setColorOpen] = useState(false)
   const [confirmTrash, setConfirmTrash] = useState(false)
   const [newTag, setNewTag] = useState('')
+  const [speaking, setSpeaking] = useState(false)
+  const [listening, setListening] = useState(false)
+  const [zen, setZen] = useState(false)
+  const recRef = useRef<VoiceEngine | null>(null)
   const saveTimer = useRef<number | null>(null)
   const loadedId = useRef<string | null>(null)
 
@@ -110,6 +135,20 @@ export function NoteEditorPage() {
     }
   }, [id])
 
+  // حالت تمرکز (Zen)
+  useEffect(() => {
+    document.body.classList.toggle('zen', zen)
+    return () => document.body.classList.remove('zen')
+  }, [zen])
+
+  // پاک‌سازی گفتار هنگام خروج
+  useEffect(() => {
+    return () => {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel()
+      recRef.current?.abort?.()
+    }
+  }, [])
+
   const openTags = async () => {
     setAllTags(await tagsRepo.all())
     setTagModal(true)
@@ -136,6 +175,71 @@ export function NoteEditorPage() {
     )
   }
 
+  const speakSupported = typeof window !== 'undefined' && 'speechSynthesis' in window
+
+  const toggleSpeak = () => {
+    if (!speakSupported) {
+      toast(t('editor.speakUnsupported'), 'error')
+      return
+    }
+    const synth = window.speechSynthesis
+    if (synth.speaking) {
+      synth.cancel()
+      setSpeaking(false)
+      return
+    }
+    const text = [title, note.plainText].filter(Boolean).join('. ')
+    if (!text.trim()) return
+    const u = new SpeechSynthesisUtterance(text)
+    u.lang = locale === 'fa' ? 'fa-IR' : 'en-US'
+    u.onend = () => setSpeaking(false)
+    u.onerror = () => setSpeaking(false)
+    synth.cancel()
+    synth.speak(u)
+    setSpeaking(true)
+  }
+
+  const copyNote = async () => {
+    try {
+      await navigator.clipboard.writeText(`${title}\n\n${note.plainText ?? ''}`)
+      toast(t('editor.copied'), 'success')
+    } catch {
+      toast(t('error.generic'), 'error')
+    }
+  }
+
+  const toggleVoice = () => {
+    const SR = getVoiceEngine()
+    if (!SR) {
+      toast(t('editor.voiceUnsupported'), 'error')
+      return
+    }
+    if (listening) {
+      recRef.current?.abort()
+      setListening(false)
+      return
+    }
+    try {
+      const rec = new SR()
+      rec.lang = locale === 'fa' ? 'fa-IR' : 'en-US'
+      rec.continuous = false
+      rec.interimResults = false
+      rec.onresult = (e) => {
+        const last = e.results[e.results.length - 1]
+        const text = last?.[0]?.transcript
+        if (text) window.dispatchEvent(new CustomEvent('yc:voice', { detail: text }))
+      }
+      rec.onend = () => setListening(false)
+      rec.onerror = () => setListening(false)
+      recRef.current = rec
+      setListening(true)
+      rec.start()
+    } catch {
+      setListening(false)
+      toast(t('editor.voiceUnsupported'), 'error')
+    }
+  }
+
   const isDrawing = note.type === 'drawing'
   const initialContent =
     note.content && typeof note.content === 'object' && 'type' in (note.content as object)
@@ -145,7 +249,7 @@ export function NoteEditorPage() {
   return (
     <div className="flex flex-col pb-16">
       {/* هدر ویرایشگر */}
-      <div className="no-scrollbar sticky top-0 z-30 -mx-4 mb-2 flex items-center gap-1 overflow-x-auto border-b border-white/8 bg-ink-950/85 px-3 py-2.5 backdrop-blur-xl">
+      <div className="yc-editorbar no-scrollbar sticky top-[58px] z-30 -mx-4 mb-2 flex items-center gap-1 overflow-x-auto border-b border-white/8 bg-ink-950/85 px-3 py-2.5 backdrop-blur-xl">
         <Button
           variant="ghost"
           size="icon"
@@ -212,6 +316,36 @@ export function NoteEditorPage() {
             aria-label={t('reminder.set')}
             className={reminderAt ? 'text-amber-300' : ''}
             onClick={() => setReminderOpen(true)}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            icon="copy"
+            aria-label={t('editor.copy')}
+            onClick={() => void copyNote()}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            icon={speaking ? 'stop' : 'play'}
+            aria-label={speaking ? t('editor.stopSpeak') : t('editor.speak')}
+            className={speaking ? 'text-rose-accent' : ''}
+            onClick={toggleSpeak}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            icon="mic"
+            aria-label={t('editor.voice')}
+            className={listening ? 'animate-pulse text-rose-accent' : ''}
+            onClick={toggleVoice}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            icon="sparkle"
+            aria-label={t('editor.zen')}
+            onClick={() => setZen(true)}
           />
           <Button
             variant="ghost"
@@ -462,6 +596,14 @@ export function NoteEditorPage() {
           toast(t('common.deleted'), 'success')
         }}
       />
+
+      {/* خروج از حالت تمرکز */}
+      {zen && (
+        <button className="yc-zen-exit" onClick={() => setZen(false)} aria-label={t('editor.zen')}>
+          <Icon name="close" size={16} />
+          {t('action.close')}
+        </button>
+      )}
     </div>
   )
 }

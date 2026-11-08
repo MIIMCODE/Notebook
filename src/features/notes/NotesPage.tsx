@@ -16,7 +16,9 @@ import Icon from '../../components/ui/Icon'
 import { Modal, Confirm } from '../../components/ui/Modal'
 import { ColorPicker, Field, inputClass } from '../../components/ui/Primitives'
 import type { Note } from '../../db/types'
-import { formatJDate } from '../../lib/jalali'
+import { formatJDate, toJalali, toDigits } from '../../lib/jalali'
+import { getSettings, saveSettings } from '../../db'
+import { tap } from '../../lib/haptics'
 
 export function NotesPage() {
   const { t, locale } = useI18n()
@@ -30,6 +32,28 @@ export function NotesPage() {
   const [folderName, setFolderName] = useState('')
   const [confirmTrash, setConfirmTrash] = useState<Note | null>(null)
   const [searchParams, setSearchParams] = useSearchParams()
+  const [quick, setQuick] = useState<'all' | 'pinned' | 'today' | 'week' | 'checklist'>('all')
+  const [sort, setSort] = useState<'newest' | 'oldest' | 'alpha' | 'length'>('newest')
+  const [layout, setLayout] = useState<'grid' | 'list'>('grid')
+  const [sheetTab, setSheetTab] = useState<'type' | 'templates'>('type')
+
+  // چیدمان ذخیره‌شده
+  useEffect(() => {
+    let alive = true
+    void getSettings()
+      .then((st) => {
+        if (alive) setLayout(st.layout)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  const changeLayout = (next: 'grid' | 'list') => {
+    setLayout(next)
+    void saveSettings({ layout: next })
+  }
 
   // میان‌بر PWA: ?new=1 → شیت یادداشت جدید
   useEffect(() => {
@@ -57,18 +81,56 @@ export function NotesPage() {
 
   const visible = useMemo(() => {
     if (!notes) return []
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    const t0 = d.getTime()
+    const weekAgo = Date.now() - 7 * 86400000
     return notes
       .filter((n) => (showArchived ? n.isArchived : !n.isArchived))
       .filter((n) => !n.isDeleted)
       .filter((n) => (folderFilter ? n.folderId === folderFilter : true))
+      .filter((n) => {
+        if (quick === 'all') return true
+        if (quick === 'pinned') return n.isPinned
+        if (quick === 'today') return n.updatedAt >= t0
+        if (quick === 'week') return n.updatedAt >= weekAgo
+        return n.type === 'checklist'
+      })
       .sort((a, b) => {
         if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1
+        if (sort === 'oldest') return a.updatedAt - b.updatedAt
+        if (sort === 'alpha') return a.title.localeCompare(b.title, locale === 'fa' ? 'fa' : 'en')
+        if (sort === 'length') return (b.plainText?.length ?? 0) - (a.plainText?.length ?? 0)
         return b.updatedAt - a.updatedAt
       })
-  }, [notes, showArchived, folderFilter])
+  }, [notes, showArchived, folderFilter, quick, sort, locale])
 
   const pinned = visible.filter((n) => n.isPinned)
   const rest = visible.filter((n) => !n.isPinned)
+
+  const stats = useMemo(() => {
+    const pool = (notes ?? []).filter((n) => !n.isDeleted && !n.isArchived)
+    const words = pool.reduce(
+      (s, n) =>
+        s + (n.title + ' ' + (n.plainText ?? '')).trim().split(/\s+/).filter(Boolean).length,
+      0,
+    )
+    return { total: pool.length, pinned: pool.filter((n) => n.isPinned).length, words }
+  }, [notes])
+
+  // «در همین روز»: یادداشت‌هایی که امروز (سال/ماه/روز شمسی) ساخته یا ویرایش شده‌اند
+  const otd = useMemo(() => {
+    if (!notes) return []
+    const now = toJalali(new Date())
+    return notes
+      .filter((n) => !n.isDeleted && !n.isArchived)
+      .filter((n) => {
+        const a = toJalali(new Date(n.createdAt))
+        const b = toJalali(new Date(n.updatedAt))
+        return (a.jm === now.jm && a.jd === now.jd) || (b.jm === now.jm && b.jd === now.jd)
+      })
+      .slice(0, 6)
+  }, [notes])
 
   const createFolder = async () => {
     const name = folderName.trim()
@@ -90,10 +152,28 @@ export function NotesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as never)}
+            aria-label={t('action.sort')}
+            className="hidden h-8 rounded-full border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white/70 outline-none sm:block"
+          >
+            <option value="newest">{t('sort.newest')}</option>
+            <option value="oldest">{t('sort.oldest')}</option>
+            <option value="alpha">{t('sort.alpha')}</option>
+            <option value="length">{t('sort.length')}</option>
+          </select>
           <Button
             variant="glass"
             size="icon"
-            icon={showArchived ? 'archive' : 'grid'}
+            icon={layout === 'grid' ? 'list' : 'grid'}
+            aria-label={layout === 'grid' ? t('layout.list') : t('layout.grid')}
+            onClick={() => changeLayout(layout === 'grid' ? 'list' : 'grid')}
+          />
+          <Button
+            variant="glass"
+            size="icon"
+            icon={showArchived ? 'archive' : 'filter'}
             aria-label={t('nav.archive')}
             onClick={() => setShowArchived((v) => !v)}
             className={showArchived ? 'text-amber-300' : ''}
@@ -107,6 +187,54 @@ export function NotesPage() {
             {t('action.new')}
           </Button>
         </div>
+      </div>
+
+      {/* آمار سریع */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="yc-stat rounded-2xl bg-white/6">
+          <div>
+            <b className="text-gradient">{toDigits(stats.total, locale)}</b>
+            <small>{t('dashboard.total')}</small>
+          </div>
+        </div>
+        <div className="yc-stat rounded-2xl bg-white/6">
+          <div>
+            <b className="text-gradient">{toDigits(stats.pinned, locale)}</b>
+            <small>{t('dashboard.pinned')}</small>
+          </div>
+        </div>
+        <div className="yc-stat rounded-2xl bg-white/6">
+          <div>
+            <b className="text-gradient">{toDigits(stats.words, locale)}</b>
+            <small>{t('dashboard.words')}</small>
+          </div>
+        </div>
+      </div>
+
+      {/* فیلترهای سریع */}
+      <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 no-scrollbar">
+        {(
+          [
+            ['all', 'notes.all', 'home'],
+            ['pinned', 'notes.pinned', 'pin'],
+            ['today', 'calendar.today', 'clock'],
+            ['week', 'filter.week', 'history'],
+            ['checklist', 'filter.checklist', 'checklist'],
+          ] as const
+        ).map(([id, labelKey, icon]) => (
+          <button
+            key={id}
+            onClick={() => setQuick(id)}
+            className={`flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold transition ${
+              quick === id
+                ? 'bg-gradient-to-r from-brand-500 to-rose-accent text-white shadow-[0_6px_18px_-8px_rgba(236,72,153,0.8)]'
+                : 'border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <Icon name={icon} size={13} />
+            {t(labelKey)}
+          </button>
+        ))}
       </div>
 
       {/* چیپ‌های پوشه */}
@@ -161,30 +289,74 @@ export function NotesPage() {
         />
       ) : (
         <div className="flex flex-col gap-6">
+          {otd.length > 0 && !showArchived && (
+            <Section title={t('otd.title')} icon="history">
+              <NoteGrid
+                notes={otd}
+                noteTagsMap={noteTagsMap}
+                onMore={setMenuNote}
+                layout={layout}
+              />
+            </Section>
+          )}
           {pinned.length > 0 && (
             <Section title={t('notes.pinned')} icon="pin">
-              <NoteGrid notes={pinned} noteTagsMap={noteTagsMap} onMore={setMenuNote} />
+              <NoteGrid
+                notes={pinned}
+                noteTagsMap={noteTagsMap}
+                onMore={setMenuNote}
+                layout={layout}
+              />
             </Section>
           )}
           {rest.length > 0 && (
             <Section title={showArchived ? t('notes.archived') : t('notes.recent')} icon="clock">
-              <NoteGrid notes={rest} noteTagsMap={noteTagsMap} onMore={setMenuNote} />
+              <NoteGrid
+                notes={rest}
+                noteTagsMap={noteTagsMap}
+                onMore={setMenuNote}
+                layout={layout}
+              />
             </Section>
           )}
         </div>
       )}
 
-      {/* FAB موبایل */}
-      <motion.button
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setSheetOpen(true)}
-        aria-label={t('action.newNote')}
-        className="fixed bottom-24 end-5 z-30 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 via-rose-accent to-amber-accent text-white shadow-[0_12px_32px_-8px_rgba(236,72,153,0.7)] sm:hidden"
-      >
-        <Icon name="plus" size={26} />
-      </motion.button>
+      {/* FAB موبایل + دکمه قالب‌ها */}
+      <div className="yc-fab-wrap sm:hidden">
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => {
+            tap(30)
+            setSheetTab('type')
+            setSheetOpen(true)
+          }}
+          aria-label={t('action.newNote')}
+          className="yc-fab"
+        >
+          <Icon name="plus" size={26} />
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => {
+            tap(24)
+            setSheetTab('templates')
+            setSheetOpen(true)
+          }}
+          aria-label={t('templates.title')}
+          title={t('templates.title')}
+          className="yc-fab yc-fab-mini"
+        >
+          <Icon name="grid" size={20} />
+        </motion.button>
+      </div>
 
-      <NewNoteSheet open={sheetOpen} onClose={() => setSheetOpen(false)} folderId={folderFilter} />
+      <NewNoteSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        folderId={folderFilter}
+        initialTab={sheetTab}
+      />
 
       {/* منوی یادداشت */}
       <AnimatePresence>
@@ -308,7 +480,7 @@ function Section({
   children,
 }: {
   title: string
-  icon: 'pin' | 'clock'
+  icon: 'pin' | 'clock' | 'history'
   children: React.ReactNode
 }) {
   return (
@@ -326,13 +498,21 @@ function NoteGrid({
   notes,
   noteTagsMap,
   onMore,
+  layout = 'grid',
 }: {
   notes: Note[]
   noteTagsMap: Map<string, import('../../db/types').Tag[]> | undefined
   onMore: (n: Note) => void
+  layout?: 'grid' | 'list'
 }) {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div
+      className={
+        layout === 'list'
+          ? 'grid grid-cols-1 gap-3'
+          : 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'
+      }
+    >
       <AnimatePresence mode="popLayout">
         {notes.map((n) => (
           <NoteCard key={n.id} note={n} tags={noteTagsMap?.get(n.id) ?? []} onMore={onMore} />

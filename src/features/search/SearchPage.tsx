@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'
 import { foldersRepo } from '../../db/repos/folders'
@@ -17,6 +18,19 @@ const TYPES: NoteType[] = ['text', 'checklist', 'table', 'code', 'image', 'audio
 export function SearchPage() {
   const { t } = useI18n()
   const [q, setQ] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // راه‌اندازی از URL: /search?q=…
+  useEffect(() => {
+    const urlQ = searchParams.get('q')
+    if (urlQ) {
+      setQ(urlQ)
+      const next = new URLSearchParams(searchParams)
+      next.delete('q')
+      setSearchParams(next, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [folder, setFolder] = useState<string | ''>('')
   const [type, setType] = useState<NoteType | ''>('')
   const [tag, setTag] = useState<string | ''>('')

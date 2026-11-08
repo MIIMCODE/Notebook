@@ -36,6 +36,10 @@ export const DEFAULT_SETTINGS: LocalSettings = {
   lockEnabled: false,
   pinHash: null,
   bioId: null,
+  palette: 'aurora',
+  layout: 'grid',
+  midnight: true,
+  haptics: true,
   onboarded: false,
 }
 

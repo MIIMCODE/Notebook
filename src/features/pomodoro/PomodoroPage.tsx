@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { confetti } from '../../lib/confetti'
+import { tap } from '../../lib/haptics'
 import { pomodoroRepo } from '../../db/repos/modules'
 import { useI18n } from '../../i18n'
 import { useUi } from '../../stores/ui'
@@ -93,6 +95,8 @@ export function PomodoroPage() {
       const n = await pomodoroRepo.todayCount()
       setSessions(n)
       toast(t('pomodoro.done'), 'success')
+      confetti()
+      tap(50)
       // مرحله بعد
       const next = (phaseIdx + 1) % PHASE_ORDER.length
       setPhaseIdx(next)

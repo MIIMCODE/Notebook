@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useI18n, type Locale } from '../../i18n'
-import { useUi } from '../../stores/ui'
+import { useUi, applyPalette, applyMidnight, applyTheme, type Theme } from '../../stores/ui'
 import Icon, { type IconName } from '../../components/ui/Icon'
+import MaterialIcon from '../../components/ui/MaterialIcon'
 import Logo from '../../components/Logo'
-import { getSettings } from '../../db'
+import { Backdrop } from '../../components/ui/Backdrop'
+import { CommandPalette } from '../command/CommandPalette'
+import { DashboardModal } from '../dashboard/DashboardModal'
+import { db, getSettings, saveSettings } from '../../db'
 import { getSyncState } from '../../db'
+
+const PALETTES = ['aurora', 'sunset', 'ocean', 'neon', 'mono'] as const
 
 interface NavItem {
   to: string
@@ -36,6 +42,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { sidebarOpen, setSidebar, moduleSheetOpen, setModuleSheet } = useUi()
   const location = useLocation()
   const [online, setOnline] = useState(navigator.onLine)
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const cmdOpen = useUi((st) => st.cmdOpen)
+  const dashOpen = useUi((st) => st.dashOpen)
+  const theme = useUi((st) => st.theme)
+  const navigate = useNavigate()
 
   // همگام‌سازی تنظیمات محلی در اولین بارگذاری
   useEffect(() => {
@@ -47,7 +58,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         ui.setTheme(s.theme)
         ui.setAccent(s.accent as never)
         if (s.locale !== locale) setLocale(s.locale as Locale)
+        applyPalette(s.palette)
+        if (s.midnight) applyMidnight(true)
       })
+      .catch(() => {})
+    // پاک‌سازی خودکار سطل بازیافت: ۳۰ روز پس از حذف
+    void db.notes
+      .filter(
+        (n) => n.isDeleted && n.deletedAt !== null && n.deletedAt < Date.now() - 30 * 86400000,
+      )
+      .delete()
       .catch(() => {})
     void getSyncState()
     return () => {
@@ -74,21 +94,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setModuleSheet(false)
   }, [location.pathname, setSidebar, setModuleSheet])
 
+  // میان‌برها: Ctrl+K پالت دستورات، Ctrl+/ تعویض تم
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault()
+        useUi.setState({ cmdOpen: true })
+      } else if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault()
+        const ui = useUi.getState()
+        const next: Theme = ui.theme === 'dark' ? 'light' : 'dark'
+        applyTheme(next, ui.accent)
+        ui.setTheme(next)
+        void saveSettings({ theme: next })
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // بستن منوی پالت رنگی با کلیک بیرون
+  useEffect(() => {
+    if (!paletteOpen) return
+    const close = () => setPaletteOpen(false)
+    window.addEventListener('click', close)
+    return () => window.removeEventListener('click', close)
+  }, [paletteOpen])
+
   return (
     <div className="min-h-dvh">
       {/* پس‌زمینه‌ی زنده (گرادیان‌های متحرک) */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <motion.div
-          animate={{ x: [0, 40, 0], y: [0, -30, 0] }}
-          transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-28 -right-24 h-96 w-96 rounded-full bg-brand-600/15 blur-3xl"
-        />
-        <motion.div
-          animate={{ x: [0, -50, 0], y: [0, 40, 0] }}
-          transition={{ duration: 32, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -bottom-28 -left-20 h-80 w-80 rounded-full bg-rose-accent/12 blur-3xl"
-        />
-      </div>
+      <Backdrop />
       {/* نوار آفلاین */}
       <AnimatePresence>
         {!online && (
@@ -96,7 +132,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             initial={{ y: -40 }}
             animate={{ y: 0 }}
             exit={{ y: -40 }}
-            className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-amber-500/90 px-4 py-1.5 text-xs font-bold text-black"
+            className="yc-offline fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-amber-500/90 px-4 py-1.5 text-xs font-bold text-black"
           >
             <Icon name="cloudOff" size={14} />
             {t('error.offline')}
@@ -144,7 +180,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ── ناوبری پایین موبایل ── */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink-950/85 backdrop-blur-2xl md:hidden">
+      <nav className="yc-bottomnav fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-ink-950/85 backdrop-blur-2xl md:hidden">
         <div className="mx-auto flex h-16 max-w-md items-center justify-around px-2 pb-[env(safe-area-inset-bottom)]">
           <BottomLink to="/" icon="home" label={t('nav.home')} />
           <BottomLink to="/search" icon="search" label={t('nav.search')} />
@@ -162,7 +198,102 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* ── محتوا ── */}
-      <main className="mx-auto min-h-dvh max-w-5xl px-4 pb-28 pt-6 md:ms-64 md:pb-10">
+      <main className="mx-auto min-h-dvh max-w-5xl px-4 pb-28 pt-3 md:ms-64 md:pb-10">
+        {/* نوار بالا */}
+        <header className="yc-topbar sticky top-0 z-40 mb-3 flex items-center gap-1.5 rounded-2xl px-2 py-1.5">
+          <NavLink
+            to="/"
+            className="flex items-center gap-2 rounded-lg px-1 py-1"
+            title={t('appName')}
+          >
+            <Logo className="size-7 shrink-0" />
+            <span className="hidden text-[16px] font-extrabold tracking-tight text-gradient sm:block">
+              {t('appName')}
+            </span>
+          </NavLink>
+          <div className="ms-auto flex items-center gap-1">
+            <button
+              className="yc-iconbtn"
+              title={t('topbar.search')}
+              aria-label={t('topbar.search')}
+              onClick={() => navigate('/search')}
+            >
+              <Icon name="search" size={18} />
+            </button>
+            <div className="relative">
+              <button
+                className="yc-iconbtn"
+                title={t('topbar.palette')}
+                aria-label={t('topbar.palette')}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setPaletteOpen((v) => !v)
+                }}
+              >
+                <Icon name="palette" size={18} />
+              </button>
+              {paletteOpen && (
+                <div
+                  className="glass-strong absolute end-0 top-full z-50 mt-2 flex items-center gap-2 rounded-xl p-2 shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                  role="menu"
+                  aria-label={t('topbar.palette')}
+                >
+                  {PALETTES.map((p) => (
+                    <button
+                      key={p}
+                      title={t(`palette.${p}`)}
+                      aria-label={t(`palette.${p}`)}
+                      onClick={() => {
+                        applyPalette(p)
+                        void saveSettings({ palette: p })
+                        setPaletteOpen(false)
+                      }}
+                      className={`yc-sw yc-sw-${p}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              className="yc-iconbtn"
+              title={t('topbar.cmd')}
+              aria-label={t('topbar.cmd')}
+              onClick={() => useUi.setState({ cmdOpen: true })}
+            >
+              <MaterialIcon name="keyboard_command_key" size={18} />
+            </button>
+            <button
+              className="yc-iconbtn"
+              title={t('topbar.dashboard')}
+              aria-label={t('topbar.dashboard')}
+              onClick={() => useUi.setState({ dashOpen: true })}
+            >
+              <MaterialIcon name="bar_chart" size={18} />
+            </button>
+            <button
+              className="yc-iconbtn"
+              title={theme === 'dark' ? t('settings.themeLight') : t('settings.themeDark')}
+              aria-label={t('settings.theme')}
+              onClick={() => {
+                const ui = useUi.getState()
+                const next: Theme = ui.theme === 'dark' ? 'light' : 'dark'
+                applyTheme(next, ui.accent)
+                ui.setTheme(next)
+                void saveSettings({ theme: next })
+              }}
+            >
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+            </button>
+            <button
+              className="yc-iconbtn px-3 text-[13px] md:hidden"
+              title={locale === 'fa' ? 'English' : 'فارسی'}
+              onClick={() => setLocale(locale === 'fa' ? 'en' : 'fa')}
+            >
+              {locale === 'fa' ? 'EN' : 'فا'}
+            </button>
+          </div>
+        </header>
         {children}
       </main>
 
@@ -245,6 +376,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         )}
       </AnimatePresence>
+
+      <CommandPalette open={cmdOpen} onClose={() => useUi.setState({ cmdOpen: false })} />
+      <DashboardModal open={dashOpen} onClose={() => useUi.setState({ dashOpen: false })} />
     </div>
   )
 }

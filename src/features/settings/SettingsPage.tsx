@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useI18n, type Locale } from '../../i18n'
-import { useUi, type Accent, type Theme } from '../../stores/ui'
+import { useUi, applyPalette, applyMidnight, type Accent, type Theme } from '../../stores/ui'
+import { setHapticsEnabled, tap } from '../../lib/haptics'
 import { getSettings, saveSettings } from '../../db'
 import { downloadJson, exportBackup, restoreBackup } from '../../lib/backup'
 import { notesRepo } from '../../db/repos/notes'
@@ -17,6 +18,8 @@ import { useSyncStatus } from '../../sync/useSyncStatus'
 import { isSupabaseConfigured } from '../../sync/client'
 import { enablePin, disableLock, registerBiometric, biometricsAvailable } from '../../lib/lock'
 import { relativeTime } from '../../lib/jalali'
+
+const PALETTES = ['aurora', 'sunset', 'ocean', 'neon', 'mono'] as const
 
 const ACCENTS: { id: Accent; color: string }[] = [
   { id: 'violet', color: '#8B5CF6' },
@@ -43,6 +46,9 @@ export function SettingsPage() {
   const { status, lastSyncAt } = useSyncStatus()
   const [confirmClear, setConfirmClear] = useState(false)
   const [confirmLockOff, setConfirmLockOff] = useState(false)
+  const [palette, setPalette] = useState<string>('aurora')
+  const [midnight, setMidnight] = useState(true)
+  const [haptics, setHaptics] = useState(true)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -52,6 +58,10 @@ export function SettingsPage() {
         if (!alive) return
         setLockEnabled(s.lockEnabled)
         setBioOn(!!s.bioId)
+        setPalette(s.palette)
+        setMidnight(s.midnight)
+        setHaptics(s.haptics)
+        setHapticsEnabled(s.haptics)
       })
       .catch(() => {})
     void biometricsAvailable().then((ok) => {
@@ -88,6 +98,21 @@ export function SettingsPage() {
     const a = document.createElement('a')
     a.href = url
     a.download = `yadche-notes-${new Date().toISOString().slice(0, 10)}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast(t('settings.exported'), 'success')
+  }
+
+  const exportTxt = async () => {
+    const notes = await notesRepo.live()
+    const txt = notes
+      .map((n) => `${n.title || t('notes.untitled')}\n${'-'.repeat(40)}\n${n.plainText ?? ''}`)
+      .join('\n\n')
+    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `yadche-notes-${new Date().toISOString().slice(0, 10)}.txt`
     a.click()
     URL.revokeObjectURL(url)
     toast(t('settings.exported'), 'success')
@@ -226,6 +251,57 @@ export function SettingsPage() {
             </div>
           </div>
           <div className="flex items-center justify-between">
+            <span className="text-sm text-white/70">{t('settings.palette')}</span>
+            <div className="flex gap-2">
+              {PALETTES.map((p) => (
+                <button
+                  key={p}
+                  aria-label={t(`palette.${p}`)}
+                  aria-pressed={palette === p}
+                  title={t(`palette.${p}`)}
+                  onClick={() => {
+                    tap(20)
+                    setPalette(p)
+                    applyPalette(p)
+                    void saveSettings({ palette: p })
+                  }}
+                  className={`yc-sw yc-sw-${p} ${palette === p ? 'active' : ''}`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm text-white/70">{t('settings.midnight')}</div>
+              <div className="text-[11px] text-white/45">{t('settings.midnightDesc')}</div>
+            </div>
+            <Switch
+              checked={midnight}
+              onChange={(v) => {
+                setMidnight(v)
+                applyMidnight(v)
+                void saveSettings({ midnight: v })
+              }}
+              label={t('settings.midnight')}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm text-white/70">{t('settings.haptics')}</div>
+              <div className="text-[11px] text-white/45">{t('settings.hapticsDesc')}</div>
+            </div>
+            <Switch
+              checked={haptics}
+              onChange={(v) => {
+                setHaptics(v)
+                setHapticsEnabled(v)
+                if (v) tap(30)
+                void saveSettings({ haptics: v })
+              }}
+              label={t('settings.haptics')}
+            />
+          </div>
+          <div className="flex items-center justify-between">
             <span className="text-sm text-white/70">{t('settings.language')}</span>
             <div className="glass flex rounded-xl p-1">
               {(
@@ -296,6 +372,16 @@ export function SettingsPage() {
             desc=".md"
             action={
               <Button size="sm" variant="glass" onClick={() => void exportMarkdown()}>
+                {t('action.export')}
+              </Button>
+            }
+          />
+          <SettingRow
+            icon="list"
+            title={t('settings.exportTxt')}
+            desc=".txt"
+            action={
+              <Button size="sm" variant="glass" onClick={() => void exportTxt()}>
                 {t('action.export')}
               </Button>
             }

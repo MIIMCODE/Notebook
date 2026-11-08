@@ -36,6 +36,8 @@ const NAMES = [
   'music_note',
   'close',
   'mail',
+  'bar_chart',
+  'keyboard_command_key',
   'event',
   'task_alt',
 ]

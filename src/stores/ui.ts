@@ -17,6 +17,8 @@ interface UiState {
   locale: Locale
   sidebarOpen: boolean
   moduleSheetOpen: boolean
+  cmdOpen: boolean
+  dashOpen: boolean
   toasts: Toast[]
   searchOpen: boolean
   setTheme: (t: Theme) => void
@@ -24,6 +26,8 @@ interface UiState {
   setLocale: (l: Locale) => void
   setSidebar: (open: boolean) => void
   setModuleSheet: (open: boolean) => void
+  setCmdOpen: (open: boolean) => void
+  setDashOpen: (open: boolean) => void
   setSearchOpen: (open: boolean) => void
   toast: (message: string, tone?: Toast['tone'], action?: Toast['action']) => void
   dismissToast: (id: string) => void
@@ -62,6 +66,17 @@ export function applyTheme(theme: Theme, accent: Accent): void {
   }
 }
 
+/** اعمال پالت رنگی روی root (توکن‌های Tailwind را بازنویسی می‌کند) */
+export function applyPalette(palette: string): void {
+  document.documentElement.dataset.palette = palette || 'aurora'
+}
+
+/** حالت نیمه‌شب: بین ۰ تا ۵ صبح پس‌زمینه تیره‌تر */
+export function applyMidnight(enabled: boolean): void {
+  const h = new Date().getHours()
+  document.body.classList.toggle('midnight', enabled && h >= 0 && h < 5)
+}
+
 let toastCounter = 0
 
 export const useUi = create<UiState>((set, get) => ({
@@ -70,6 +85,8 @@ export const useUi = create<UiState>((set, get) => ({
   locale: 'fa',
   sidebarOpen: false,
   moduleSheetOpen: false,
+  cmdOpen: false,
+  dashOpen: false,
   searchOpen: false,
   toasts: [],
 
@@ -86,6 +103,8 @@ export const useUi = create<UiState>((set, get) => ({
   setLocale: (locale) => set({ locale }),
   setSidebar: (sidebarOpen) => set({ sidebarOpen }),
   setModuleSheet: (moduleSheetOpen) => set({ moduleSheetOpen }),
+  setCmdOpen: (cmdOpen) => set({ cmdOpen }),
+  setDashOpen: (dashOpen) => set({ dashOpen }),
   setSearchOpen: (searchOpen) => set({ searchOpen }),
 
   toast: (message, tone = 'default', action) => {

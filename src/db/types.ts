@@ -195,5 +195,13 @@ export interface LocalSettings {
   pinHash: string | null
   /** شناسه‌ی credential وب‌اوثنتیکیتور (اثر انگشت) — base64url */
   bioId: string | null
+  /** پالت رنگی (aurora/sunset/ocean/neon/mono) */
+  palette: string
+  /** چیدمان خانه: grid | list */
+  layout: 'grid' | 'list'
+  /** حالت نیمه‌شب (تیره‌تر بین ۰ تا ۵ صبح) */
+  midnight: boolean
+  /** لرزش لمسی */
+  haptics: boolean
   onboarded: boolean
 }

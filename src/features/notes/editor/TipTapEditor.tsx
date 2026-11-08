@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { EditorContent, useEditor, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -154,6 +154,17 @@ export function TipTapEditor({ initialContent, onChange, placeholder }: Props) {
       onChange(e.getJSON(), e.getText())
     },
   })
+
+  // ورودی صوتی: درج متنِ تشخیص‌داده‌شده از رویداد سراسری
+  useEffect(() => {
+    if (!editor) return
+    const onVoice = (e: Event) => {
+      const text = (e as CustomEvent<string>).detail
+      if (text) editor.chain().focus().insertContent(text).run()
+    }
+    window.addEventListener('yc:voice', onVoice)
+    return () => window.removeEventListener('yc:voice', onVoice)
+  }, [editor])
 
   const warn = useCallback((msg: string) => toast(msg, 'error'), [toast])
 

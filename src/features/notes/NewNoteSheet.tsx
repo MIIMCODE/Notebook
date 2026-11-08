@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { confetti } from '../../lib/confetti'
+import { tap } from '../../lib/haptics'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { notesRepo } from '../../db/repos/notes'
@@ -22,16 +24,25 @@ export function NewNoteSheet({
   open,
   onClose,
   folderId,
+  initialTab,
 }: {
   open: boolean
   onClose: () => void
   folderId?: string | null
+  initialTab?: 'type' | 'templates'
 }) {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const [tab, setTab] = useState<'type' | 'templates'>('type')
+  const [tab, setTab] = useState<'type' | 'templates'>(initialTab ?? 'type')
+
+  // باز شدن با تب دلخواه (مثلاً دکمه‌ی قالب‌ها)
+  useEffect(() => {
+    if (open) setTab(initialTab ?? 'type')
+  }, [open, initialTab])
 
   const create = async (type: NoteType) => {
+    tap(30)
+    confetti()
     const note = await notesRepo.create({ type, folderId: folderId ?? null })
     onClose()
     navigate(`/note/${note.id}`, { state: { fresh: true } })
@@ -40,6 +51,8 @@ export function NewNoteSheet({
   const createFromTemplate = async (tplId: string) => {
     const tpl = TEMPLATES.find((x) => x.id === tplId)
     if (!tpl) return
+    tap(30)
+    confetti()
     const { plain, tiptap } = tpl.make()
     const note = await notesRepo.create({
       type: 'text',
