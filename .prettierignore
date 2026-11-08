@@ -1,0 +1,10 @@
+dist
+android
+ios
+resources
+node_modules
+package-lock.json
+playwright-report
+test-results
+coverage
+public/icons

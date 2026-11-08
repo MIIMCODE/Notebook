@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="page" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F5F3FF"/>
+    </linearGradient>
+    <linearGradient id="ribbon" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F472B6"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(24.1 76.8) scale(0.85)">
+    <path d="M404 236 H656 A56 56 0 0 1 712 292 V732 A56 56 0 0 1 656 788 H368 A56 56 0 0 1 312 732 V324 Z" fill="url(#page)"/>
+    <path d="M312 324 L404 236 L404 324 Z" fill="#E9D5FF"/>
+    <rect x="372" y="404" width="188" height="36" rx="18" fill="#C4B5FD"/>
+    <rect x="372" y="480" width="132" height="36" rx="18" fill="#F9A8D4"/>
+    <rect x="372" y="556" width="76" height="36" rx="18" fill="#FCD34D"/>
+    <path d="M580 236 H656 V560 L618 518 L580 560 Z" fill="url(#ribbon)"/>
+    <path d="M800 636 Q804 668 836 676 Q804 684 800 716 Q796 684 764 676 Q796 668 800 636 Z" fill="#FFFFFF"/>
+    <circle cx="764" cy="612" r="10" fill="#FFFFFF"/>
+  </g>
+</svg>
